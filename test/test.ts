@@ -33,7 +33,7 @@ var nockBack = require('nock').back;
 
 nockBack.fixtures = 'nockfixtures/';
 
-var integrationTest = process.env.INTEGRATION === "TRUE";
+var integrationTest = process.env.INTEGRATION === "1";
 
 // from https://github.com/pgte/nock
 // wild: all requests go out to the internet, don't replay anything, doesn't record anything (use this for integration test)
