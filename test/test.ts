@@ -127,13 +127,6 @@ describe('sdk', () => {
 			const longProjectName = `This is a really long name that no one will actually do this at all 123456!!`;
 			const nonEmptyProjectSummary = `non-empty summary`;
 
-			// before(() => console.log(`create new app: starting`));
-
-			// after(() => {
-			// 	console.log(`create new app: done`);
-			// 	nockDone();
-			// });
-
 			it('should just work', () => {
 				return client.platform().createNewApp(projectName, nonEmptyProjectSummary)
 					.should.eventually.have.property(`_name`, projectName);
@@ -180,8 +173,6 @@ describe('sdk', () => {
 		describe('expose working copy', function() {
 
 			this.timeout(50000);
-			//nockBack('exposeWorkingCopy.json', function(nockDone) {
-			//	after(() => nockDone());
 
 			it('should succeed with an existing project', () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
@@ -212,12 +203,8 @@ describe('sdk', () => {
 					.should.eventually.be.rejectedWith(`404`);
 			});
 		});
-		//});
-
-		//nockBack('commitToTeamServer.json', function(nockDone) {
+		
 		describe('commit to teamserver', function() {
-
-			//		after(() => nockDone());
 
 			this.timeout(50000);
 			const invalidProject = new sdk.Project(client, `WhateverId`, `WhateverName`);
