@@ -27,6 +27,25 @@ import {IModel, domainmodels, projects} from 'mendixmodelsdk';
 import sdk = require('../mendix-platform-sdk');
 import when = require('when');
 import chai = require('chai');
+import nock = require('nock');
+
+var nockBack = require('nock').back;
+
+nockBack.fixtures = 'nockfixtures/';
+
+var integrationTest = process.env.INTEGRATION === "TRUE";
+
+// from https://github.com/pgte/nock
+// wild: all requests go out to the internet, don't replay anything, doesn't record anything (use this for integration test)
+// dryrun: The default, use recorded nocks, allow http calls, doesn't record anything, useful for writing new tests
+// record: use recorded nocks, record new nocks (for development or unit test or CI)
+// lockdown: use recorded nocks, disables all http calls even when not nocked, doesn't record  (for unit test and CI)
+if (integrationTest) {
+	nockBack.setMode('wild');
+} else {
+	nockBack.setMode('lockdown');
+}
+
 var expect = chai.expect;
 var assert = chai.assert;
 var should = chai.should();
@@ -59,6 +78,7 @@ interface MendixSdkClientConfig {
 	openId?: string;
 	projectsApiEndpoint?: string;
 	modelApiEndpoint?: string;
+	options?: sdk.SdkOptions;
 }
 
 function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClient {
@@ -68,7 +88,8 @@ function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClie
 		password: null,
 		openId: null,
 		projectsApiEndpoint: 'https://sprintr.home.mendix.dev',
-		modelApiEndpoint: 'https://model-api.mendix.dev'
+		modelApiEndpoint: 'https://model-api.mendix.dev',
+		options: new sdk.SdkOptions(1)
 	};
 	return new sdk.MendixSdkClient(
 		config.username ? config.username : defaultConfig.username,
@@ -76,7 +97,8 @@ function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClie
 		config.password ? config.password : defaultConfig.password,
 		config.openId ? config.openId : defaultConfig.openId,
 		config.projectsApiEndpoint ? config.projectsApiEndpoint : defaultConfig.projectsApiEndpoint,
-		config.modelApiEndpoint ? config.modelApiEndpoint : defaultConfig.modelApiEndpoint
+		config.modelApiEndpoint ? config.modelApiEndpoint : defaultConfig.modelApiEndpoint,
+		config.options ? config.options : defaultConfig.options
 	);
 }
 
@@ -92,214 +114,238 @@ let clientWithInvalidEndPoint = createMendixSdkClient({
 	projectsApiEndpoint: 'https://sprintr.home.mendix.dev/invalid'
 });
 
-describe('create new app', function() { //function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
-	this.timeout(50000);
+describe('sdk', () => {
 
-	const projectName = `mySdkProject`;
-	const longProjectName = `This is a really long name that no one will actually do this at all 123456!!`;
-	const nonEmptyProjectSummary = `non-empty summary`;
+	nockBack('fixtures.json', function(nockDone) {
+		after(() => nockDone());
 
-	it('should just work', () => {
-		return client.platform().createNewApp(projectName, nonEmptyProjectSummary)
-			.should.eventually.have.property(`_name`, projectName);
-	});
-	it('should succeed with empty summary', () => {
-		return client.platform().createNewApp(projectName)
-			.should.eventually.have.property(`_name`, projectName);
-	});
-	it('should succeed with long project name and summary', () => {
-		return client.platform().createNewApp(longProjectName)
-			.should.eventually.have.property(`_name`, longProjectName);
-	});
-	it('should fail because project name is empty', () => {
-		return client.platform().createNewApp(null)
-			.should.eventually.be.rejectedWith(`Project name cannot be empty`);
-	});
-	it('should fail because it contains invalid characters', () => {
-		return client.platform().createNewApp('/?mySdkProject', nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Project name cannot contain`);
-	});
-	it('should fail because of invalid API key', () => {
-		return clientWithInvalidApiKey.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
-	});
-	it('should fail because of invalid hostname', () => {
-		return clientWithInvalidHost.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Connection error`);
-	});
-	it('should fail because of invalid endpoint', () => {
-		return clientWithInvalidEndPoint.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`404 Not Found`);
-	});
-});
+		describe('create new app', function() { //function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
+		
+			this.timeout(50000);
 
+			const projectName = `mySdkProject`;
+			const longProjectName = `This is a really long name that no one will actually do this at all 123456!!`;
+			const nonEmptyProjectSummary = `non-empty summary`;
 
-const roundTripProject = new sdk.Project(client, projectId, projectName);
+			// before(() => console.log(`create new app: starting`));
 
-const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
-const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
+			// after(() => {
+			// 	console.log(`create new app: done`);
+			// 	nockDone();
+			// });
 
-const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(3, mainLineOnRoundTrip);
-const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);
-const revisionOnNonExistentBranch = new sdk.Revision(-1, nonExistentBranchOnRoundTrip);
+			it('should just work', () => {
+				return client.platform().createNewApp(projectName, nonEmptyProjectSummary)
+					.should.eventually.have.property(`_name`, projectName);
+			});
+			it('should succeed with empty summary', () => {
+				return client.platform().createNewApp(projectName)
+					.should.eventually.have.property(`_name`, projectName);
+			});
+			it('should succeed with long project name and summary', () => {
+				return client.platform().createNewApp(longProjectName)
+					.should.eventually.have.property(`_name`, longProjectName);
+			});
+			it('should fail because project name is empty', () => {
+				return client.platform().createNewApp(null)
+					.should.eventually.be.rejectedWith(`Project name cannot be empty`);
+			});
+			it('should fail because it contains invalid characters', () => {
+				return client.platform().createNewApp('/?mySdkProject', nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Project name cannot contain`);
+			});
+			it('should fail because of invalid API key', () => {
+				return clientWithInvalidApiKey.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
+			});
+			it('should fail because of invalid hostname', () => {
+				return clientWithInvalidHost.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Connection error`);
+			});
+			it('should fail because of invalid endpoint', () => {
+				return clientWithInvalidEndPoint.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`404`);
+			});
+		});
 
-const nonExistentProject = new sdk.Project(client, `Random non-existent id`, `empty`);
-const mainLineOnNonExistentProject = new sdk.Branch(nonExistentProject, null);
-const revisionOnNonExistentProject = new sdk.Revision(3, mainLineOnNonExistentProject);
+		const roundTripProject = new sdk.Project(client, projectId, projectName);
 
-describe('expose working copy', function() {
+		const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
+		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
 
-	this.timeout(50000);
-	it('should succeed with an existing project', () => {
-		return client.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-			.should.eventually.be.fulfilled;
-	});
-	it('should fail because project does not exist', () => {
-		return client.platform().createOnlineWorkingCopy(nonExistentProject, revisionOnNonExistentProject)
-			.should.eventually.be.rejectedWith("Project does not exist");
-	});
-	it('should fail because revision does not exist', () => {
-		return client.platform().createOnlineWorkingCopy(roundTripProject, invalidRevisionOnMainLineOnRoundTrip)
-			.should.eventually.be.rejectedWith("No such revision");
-	});
-	it('should fail because branch does not exist', () => {
-		return client.platform().createOnlineWorkingCopy(roundTripProject, revisionOnNonExistentBranch)
-			.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' doesn't exist`); //yes, the quote is asymmetric, it's deliberate
-	});
-	it('should fail because API Keys is invalid', () => {
-		return clientWithInvalidApiKey.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-			.should.eventually.be.rejectedWith(`Invalid username and/or API key`);
-	});
-	it('should fail because of invalid hostname', () => {
-		return clientWithInvalidHost.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-			.should.eventually.be.rejectedWith(`Connection error`);
-	});
-	it('should fail because of invalid endpoint', () => {
-		return clientWithInvalidEndPoint.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-			.should.eventually.be.rejectedWith(`404 Not Found`);
-	});
-});
+		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(3, mainLineOnRoundTrip);
+		const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);
+		const revisionOnNonExistentBranch = new sdk.Revision(-1, nonExistentBranchOnRoundTrip);
 
-describe('commit to teamserver', function() {
-	this.timeout(50000);
-	const invalidProject = new sdk.Project(client, `WhateverId`, `WhateverName`);
-	const revisionOnInvalidProject = new sdk.Revision(-1, new sdk.Branch(invalidProject, null));
-	const nonExistentWorkingCopy = new sdk.OnlineWorkingCopy(client, `Obviously does not exist`, revisionOnInvalidProject, null);
-	const nonExistentBranchName = `Non-existentBranch`;
+		const nonExistentProject = new sdk.Project(client, `Random non-existent id`, `empty`);
+		const mainLineOnNonExistentProject = new sdk.Branch(nonExistentProject, null);
+		const revisionOnNonExistentProject = new sdk.Revision(3, mainLineOnNonExistentProject);
 
-	// before((done) => {
+		describe('expose working copy', function() {
 
-	// //TODO: This is the test that we want to use once the unzipping issue is solved
-	// 	//const project = new Project(client, "12bcb33e-ad43-463a-8c34-a67c729a7997", projectName); //production
-	// 	const project = new Project(client, "eaa2fbce-c273-473a-921a-354463cf37f0", "mySdkProject"); //mxlab
-	// 	const branch = new Branch(project, null);
-	// 	const revision = new Revision(2, branch);
-	// 	client.platform().createOnlineWorkingCopy(project, revision)
-	// 		.done(
-	// 			(wc) => {
-	// 				workingCopy = wc;
-	// 				done();
-	// 			},
-	// 			(reason) => {
-	// 				throw (`Unable to create working copy. Cannot execute any tests in 'commit to teamserver' suite: ${reason}`);
-	// 			});
-	// });
+			this.timeout(50000);
+			//nockBack('exposeWorkingCopy.json', function(nockDone) {
+			//	after(() => nockDone());
 
-	describe('with a newly created project and working copy', () => {
-		let sharedProject: sdk.Project;
-		let workingCopy: sdk.OnlineWorkingCopy;
-		before((mochaDone) => {
-			client.platform().createNewApp('TestApp').done(
-				(project) => {
-					sharedProject = project;
-					mochaDone();
-				},
-				(reason) => {
-					throw (`Unable to create project. Cannot execute any tests in this suite: ${reason}`);
+			it('should succeed with an existing project', () => {
+				return client.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
+					.should.eventually.be.fulfilled;
+			});
+			it('should fail because project does not exist', () => {
+				return client.platform().createOnlineWorkingCopy(nonExistentProject, revisionOnNonExistentProject)
+					.should.eventually.be.rejectedWith("Project does not exist");
+			});
+			it('should fail because revision does not exist', () => {
+				return client.platform().createOnlineWorkingCopy(roundTripProject, invalidRevisionOnMainLineOnRoundTrip)
+					.should.eventually.be.rejectedWith("No such revision");
+			});
+			it('should fail because branch does not exist', () => {
+				return client.platform().createOnlineWorkingCopy(roundTripProject, revisionOnNonExistentBranch)
+					.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' doesn't exist`); //yes, the quote is asymmetric, it's deliberate
+			});
+			it('should fail because API Keys is invalid', () => {
+				return clientWithInvalidApiKey.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
+					.should.eventually.be.rejectedWith(`Invalid username and/or API key`);
+			});
+			it('should fail because of invalid hostname', () => {
+				return clientWithInvalidHost.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
+					.should.eventually.be.rejectedWith(`Connection error`);
+			});
+			it('should fail because of invalid endpoint', () => {
+				return clientWithInvalidEndPoint.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
+					.should.eventually.be.rejectedWith(`404`);
+			});
+		});
+		//});
+
+		//nockBack('commitToTeamServer.json', function(nockDone) {
+		describe('commit to teamserver', function() {
+
+			//		after(() => nockDone());
+
+			this.timeout(50000);
+			const invalidProject = new sdk.Project(client, `WhateverId`, `WhateverName`);
+			const revisionOnInvalidProject = new sdk.Revision(-1, new sdk.Branch(invalidProject, null));
+			const nonExistentWorkingCopy = new sdk.OnlineWorkingCopy(client, `Obviously does not exist`, revisionOnInvalidProject, null);
+			const nonExistentBranchName = `Non-existentBranch`;
+
+			// before((done) => {
+
+			// //TODO: This is the test that we want to use once the unzipping issue is solved
+			// 	//const project = new Project(client, "12bcb33e-ad43-463a-8c34-a67c729a7997", projectName); //production
+			// 	const project = new Project(client, "eaa2fbce-c273-473a-921a-354463cf37f0", "mySdkProject"); //mxlab
+			// 	const branch = new Branch(project, null);
+			// 	const revision = new Revision(2, branch);
+			// 	client.platform().createOnlineWorkingCopy(project, revision)
+			// 		.done(
+			// 			(wc) => {
+			// 				workingCopy = wc;
+			// 				done();
+			// 			},
+			// 			(reason) => {
+			// 				throw (`Unable to create working copy. Cannot execute any tests in 'commit to teamserver' suite: ${reason}`);
+			// 			});
+			// });
+
+			describe('with a newly created project and working copy', () => {
+				let sharedProject: sdk.Project;
+				let workingCopy: sdk.OnlineWorkingCopy;
+				before((mochaDone) => {
+					client.platform().createNewApp('TestApp').done(
+						(project) => {
+							sharedProject = project;
+							mochaDone();
+						},
+						(reason) => {
+							throw (`Unable to create project. Cannot execute any tests in this suite: ${reason}`);
+						});
 				});
-		});
-		beforeEach((mochaDone) => {
-			sharedProject.createWorkingCopy().done(
-				(wc) => {
-					workingCopy = wc;
-					mochaDone();
-				},
-				(reason) => {
-					throw (`Unable to create working copy. Cannot execute any tests in this suite: ${reason}`);
+				beforeEach((mochaDone) => {
+					sharedProject.createWorkingCopy().done(
+						(wc) => {
+							workingCopy = wc;
+							mochaDone();
+						},
+						(reason) => {
+							throw (`Unable to create working copy. Cannot execute any tests in this suite: ${reason}`);
+						});
 				});
-		});
-		it('should succeed with default commit parameters', () => {
-			return workingCopy.commit().should.eventually.be.fulfilled;
-		});
-		it('should succeed with branch commit parameter retrieved from workingCopy', () => {
-			return workingCopy.commit(workingCopy.sourceRevision().branch().name()).should.eventually.be.fulfilled;
-		});
-		it('should succeed with branch and revision commit parameters from workingCopy', () => {
-			let branchName = workingCopy.sourceRevision().branch().name();
-			let revisionNr = workingCopy.sourceRevision().num();
-			return workingCopy.commit(branchName, revisionNr).should.eventually.be.fulfilled;
-		});
-		it(`should fail because branch does not exist`, () => {
-			return workingCopy.commit(nonExistentBranchName).should.eventually.be.rejectedWith(`${nonExistentBranchName}' doesn't exist`);
-		});
-		it('should fail because revision is invalid', () => {
-			return client.platform().commitToTeamServer(workingCopy, workingCopy.sourceRevision().branch().name(), -2).should.eventually.be.rejectedWith(`Invalid base revision`);
-		});
-		it('should fail because API Keys is invalid', () => {
-			return clientWithInvalidApiKey.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
-		});
-		it('should fail because of invalid hostname', () => {
-			return clientWithInvalidHost.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Connection error`);
-		});
-		it('should fail because of invalid endpoint', () => {
-			clientWithInvalidEndPoint.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`404 Not Found`)
-		});
-	});
+				it('should succeed with default commit parameters', () => {
+					return workingCopy.commit().should.eventually.be.fulfilled;
+				});
+				it('should succeed with branch commit parameter retrieved from workingCopy', () => {
+					return workingCopy.commit(workingCopy.sourceRevision().branch().name()).should.eventually.be.fulfilled;
+				});
+				it('should succeed with branch and revision commit parameters from workingCopy', () => {
+					let branchName = workingCopy.sourceRevision().branch().name();
+					let revisionNr = workingCopy.sourceRevision().num();
+					return workingCopy.commit(branchName, revisionNr).should.eventually.be.fulfilled;
+				});
+				it(`should fail because branch does not exist`, () => {
+					return workingCopy.commit(nonExistentBranchName).should.eventually.be.rejectedWith(`${nonExistentBranchName}' doesn't exist`);
+				});
+				it('should fail because revision is invalid', () => {
+					return client.platform().commitToTeamServer(workingCopy, workingCopy.sourceRevision().branch().name(), -2).should.eventually.be.rejectedWith(`Invalid base revision`);
+				});
+				it('should fail because API Keys is invalid', () => {
+					return clientWithInvalidApiKey.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
+				});
+				it('should fail because of invalid hostname', () => {
+					return clientWithInvalidHost.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Connection error`);
+				});
+				it('should fail because of invalid endpoint', () => {
+					clientWithInvalidEndPoint.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`404 Not Found`)
+				});
+			});
 
-	it('should fail because working copy does not exist', () => {
-		return client.platform().commitToTeamServer(nonExistentWorkingCopy).should.eventually.be.rejectedWith(`Project does not exist`);
-	});
+			it('should fail because working copy does not exist', () => {
+				return client.platform().commitToTeamServer(nonExistentWorkingCopy).should.eventually.be.rejectedWith(`Project does not exist`);
+			});
 
-	it(`should succeed with some changes in the model`, () => {
-		return client.platform().createNewApp('TestModelChange')
-			.then(project => project.createWorkingCopy())
-			.then((updateModel))
-			.then((wc) => {
-				return wc.commit();
-			}).then((revision) => {
-				return revision.num();
-			}).should.eventually.equal(3);
-	});
-	it(`should succeed with two commits`, () => {
-		return client.platform().createNewApp('TestDoubleCommit')
-			.then(project => project.createWorkingCopy())
-			.then((updateModel))
-			.then((workingCopy) => workingCopy.commit())
-			.then(revision => revision.createWorkingCopy())
-			.then((updateModel))
-			.then((workingCopy) => {
-				return workingCopy.commit();
-			}).then((revision) => {
-				return revision.num();
-			}).should.eventually.equal(4);
-	});
-	it('should fail because revision is outdated', () => {
-		return client.platform().createNewApp('TestOutdatedCommit', 'nothing')
-			.then(project => project.createWorkingCopy())
-			.then((updateModel))
-			.then((workingCopy) => workingCopy.commit())
-			.then(revision => revision.createWorkingCopy())
-			.then((updateModel))
-			.then((workingCopy) => {
-				return workingCopy.commit(null, 2);
-			}).should.eventually.be.rejectedWith(`Working copy is not up-to-date`);
+			if (integrationTest) {
+				it(`should succeed with some changes in the model`, () => {
+					return client.platform().createNewApp('TestModelChange')
+						.then(project => project.createWorkingCopy())
+						.then((updateModel))
+						.then((wc) => {
+							return wc.commit();
+						}).then((revision) => {
+							return revision.num();
+						}).should.eventually.equal(3);
+				});
+				it(`should succeed with two commits`, () => {
+					return client.platform().createNewApp('TestDoubleCommit')
+						.then(project => project.createWorkingCopy())
+						.then((updateModel))
+						.then((workingCopy) => workingCopy.commit())
+						.then(revision => revision.createWorkingCopy())
+						.then((updateModel))
+						.then((workingCopy) => {
+							return workingCopy.commit();
+						}).then((revision) => {
+							return revision.num();
+						}).should.eventually.equal(4);
+				});
+				it('should fail because revision is outdated', () => {
+					return client.platform().createNewApp('TestOutdatedCommit', 'nothing')
+						.then(project => project.createWorkingCopy())
+						.then((updateModel))
+						.then((workingCopy) => workingCopy.commit())
+						.then(revision => revision.createWorkingCopy())
+						.then((updateModel))
+						.then((workingCopy) => {
+							return workingCopy.commit(null, 2);
+						}).should.eventually.be.rejectedWith(`Working copy is not up-to-date`);
+				});
+			}
+		});
+		
+		function updateModel(wc: sdk.OnlineWorkingCopy): sdk.OnlineWorkingCopy {
+			const project = wc.model().root;
+			const mod = new projects.Module(project);
+			mod.name = `NewModule_${Date.now() }`;
+			project.modules.push(mod);
+			return wc;
+		}
+
 	});
 });
-
-function updateModel(wc: sdk.OnlineWorkingCopy): sdk.OnlineWorkingCopy {
-	const project = wc.model().root;
-	const mod = new projects.Module(project);
-	mod.name = `NewModule_${Date.now() }`;
-	project.modules.push(mod);
-	return wc;
-}
-
 /*
  *
  * MENDIX SDK DEVELOPER CODE
@@ -371,8 +417,8 @@ if (false) {
 	}
 
 	/**
-	 * Generic error handler that exits the script after printing error details.
-	 */
+* Generic error handler that exits the script after printing error details.
+*/
 	function errorHandler(error): void {
 		console.log('Something went wrong:');
 		console.log(error);
