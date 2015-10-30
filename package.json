@@ -5,7 +5,7 @@
   "main": "mendix-platform-sdk.js",
   "typings": "mendix-platform-sdk",
   "scripts": {
-    "test": "mocha",
+    "test": "npm run build && mocha",
     "tsc": "tsc",
     "build": "npm install && tsd install && tsc && patch -p0 < mendix-platform-sdk.d.ts.patch",
     "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts"
