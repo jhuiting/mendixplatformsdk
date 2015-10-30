@@ -17,28 +17,32 @@ const apikey = '364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1';
 
 const client = new sdk.MendixSdkClient(username, apikey, null, null, 'https://sprintr.home.mendix.dev', 'https://model-api.mendix.dev');
 
-describe(`Teamserver - Modelserver Integration`, function() {
-    this.timeout(50000);
-    it(`Smoke test`, () => {
-        return client.platform().createNewApp(`NewApp-${Date.now() }`)
-            .then(project => project.createWorkingCopy())
-            .then(workingCopy => loadDomainModel(workingCopy))
-            .then(workingCopy => {
-                const dm = pickDomainModel(workingCopy);
-                const domainModel = dm.load();
+var integrationTest = process.env.INTEGRATION === "1";
 
-                let entity = new domainmodels.Entity();
-                entity.name = `NewEntity-${Date.now() }`;
-                entity.location = { x: 100, y: 100 };
+if (integrationTest) {
+    describe(`Teamserver - Modelserver Integration`, function() {
+        this.timeout(50000);
+        it(`Smoke test`, () => {
+            return client.platform().createNewApp(`NewApp-${Date.now() }`)
+                .then(project => project.createWorkingCopy())
+                .then(workingCopy => loadDomainModel(workingCopy))
+                .then(workingCopy => {
+                    const dm = pickDomainModel(workingCopy);
+                    const domainModel = dm.load();
 
-                domainModel.entities.push(entity);
+                    let entity = new domainmodels.Entity();
+                    entity.name = `NewEntity-${Date.now() }`;
+                    entity.location = { x: 100, y: 100 };
 
-                return workingCopy;
-            })
-            .then(workingCopy => workingCopy.commit())
-            .should.eventually.be.fulfilled;
+                    domainModel.entities.push(entity);
+
+                    return workingCopy;
+                })
+                .then(workingCopy => workingCopy.commit())
+                .should.eventually.be.fulfilled;
+        });
     });
-});
+}
 
 function loadDomainModel(workingCopy: sdk.OnlineWorkingCopy): when.Promise<sdk.OnlineWorkingCopy> {
     const dm = pickDomainModel(workingCopy);
