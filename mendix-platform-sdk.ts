@@ -91,9 +91,12 @@ interface RequestContents {
 export class MendixSdkClient {
 	private _platformSdkClient: PlatformSdkClient;
 	private _modelSdkClient: ModelSdkClient;
+	private _options: SdkOptions;
 
 	private static DEFAULT_MODELAPI_ENDPOINT = `https://model-api.cfapps.io`;
 	private static DEFAULT_PROJECTSAPI_ENDPOINT = `https://sprintr.home.mendix.com`;
+
+	private static DEFAULT_POLL_DELAY = 1000;
 
 	/**
 		 * Create a new client to access [Mendix](developer.mendix.com) Platform and Model APIs.
@@ -101,7 +104,7 @@ export class MendixSdkClient {
 		 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
 		 * @param apikey API key for your account.
 		 */
-	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string) {
+	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
 
 		if (apikey) {
@@ -126,6 +129,8 @@ export class MendixSdkClient {
 
 		this._platformSdkClient = new PlatformSdkClient(this, username, apikey,
 			projectsApiEndpoint ? projectsApiEndpoint : MendixSdkClient.DEFAULT_PROJECTSAPI_ENDPOINT);
+
+		this._options = options ? options : new SdkOptions(MendixSdkClient.DEFAULT_POLL_DELAY);
 	}
 
 	platform(): PlatformSdkClient {
@@ -143,6 +148,10 @@ export class MendixSdkClient {
 	*/
 	retrieveProjects(): when.Promise<Project[]> {
 		return this._platformSdkClient.retrieveProjects(this);
+	}
+
+	options(): SdkOptions {
+		return this._options;
 	}
 }
 
@@ -375,7 +384,7 @@ export class PlatformSdkClient {
 						this._awaitJobResult(jobId).done(resolve, reject);
 					}
 				}, reject);
-			}, 1000);
+			}, this._client.options().pollDelay());
 		});
 	}
 
@@ -720,6 +729,22 @@ export class Branch {
 
 			resolve(revisions);
 		});
+	}
+}
+
+/**
+ * Options
+ */
+export class SdkOptions {
+
+	private _pollDelay: number;
+
+	constructor(pollDelay?: number) {
+		this._pollDelay = pollDelay;
+	}
+
+	pollDelay(): number {
+		return this._pollDelay;
 	}
 }
 
