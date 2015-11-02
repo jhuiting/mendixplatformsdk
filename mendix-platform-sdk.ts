@@ -651,5 +651,5 @@ export class Branch {
  * SDK Options
  */
 export interface SdkOptions {
-	pollDelay: number
+	pollDelay?: number
 }
