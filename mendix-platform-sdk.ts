@@ -648,7 +648,6 @@ function myLog(message, ...optionalParams: any[]): void {
 	console.log(`${Date.now() }: ${message} ${optionalParams}`);
 }
 
-// Nice, but is it type safe, given that T must extend IAbstractElement?
 interface Loadable<T> {
 	load(callback: (result: T) => void): void;
 }
