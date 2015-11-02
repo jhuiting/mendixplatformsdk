@@ -53,6 +53,8 @@ chai.use(require('chai-string'));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const projectId = `ef03c9be-278c-486f-b36c-b1a7b0740ea8`;
 const projectName = `Roundtrip Integration`;
 

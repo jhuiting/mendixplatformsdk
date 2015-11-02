@@ -12,6 +12,8 @@ chai.use(require('chai-string'));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const username = 'richard.ford51@example.com';
 const apikey = '364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1';
 
