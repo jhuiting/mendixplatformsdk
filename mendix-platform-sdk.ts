@@ -103,6 +103,7 @@ export class MendixSdkClient {
 		 *
 		 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
 		 * @param apikey API key for your account.
+		 * @param options a JSON object containing configuration options for the SDK Client.
 		 */
 	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
@@ -649,6 +650,7 @@ export class Branch {
 
 /**
  * SDK Options
+ * - pollDelay: used for running tests with mocks.
  */
 export interface SdkOptions {
 	pollDelay?: number
