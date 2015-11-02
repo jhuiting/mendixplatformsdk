@@ -42,8 +42,10 @@ var integrationTest = process.env.INTEGRATION === "1";
 // lockdown: use recorded nocks, disables all http calls even when not nocked, doesn't record  (for unit test and CI)
 if (integrationTest) {
 	nockBack.setMode('wild');
+	console.log(`Running integration tests. Requests will target actual servers. Several tests involving Model SDK will also be executed.`)
 } else {
 	nockBack.setMode('lockdown');
+	console.log(`Running unit tests. Network requests are mocked (see nockfixtures/fixtures.json). Several tests involving Model SDK will not be executed.`)
 }
 
 var expect = chai.expect;
