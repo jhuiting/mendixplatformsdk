@@ -92,17 +92,25 @@ interface RequestContents {
 export class MendixSdkClient {
 	private _platformSdkClient: PlatformSdkClient;
 	private _modelSdkClient: ModelSdkClient;
+	private _options: SdkOptions;
 
 	private static DEFAULT_MODELAPI_ENDPOINT = `https://model-api.cfapps.io`;
 	private static DEFAULT_PROJECTSAPI_ENDPOINT = `https://sprintr.home.mendix.com`;
+
+	private static DEFAULT_POLL_DELAY = 1000;
 
 	/**
 		 * Create a new client to access [Mendix](developer.mendix.com) Platform and Model APIs.
 		 *
 		 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
 		 * @param apikey API key for your account.
+		 * @param password Alternative way to authenticate with username, password and openid
+		 * @param openid Alternative way to authenticate with username, password and openid
+		 * @param projectsApiEndpoint For internal use. Connects to a custom instance of the Projects API.
+		 * @param modelApiEndpoint For internal use. Connects to a custom instance of the Model API.
+		 * @param options a JSON object containing configuration options for the SDK Client.
 		 */
-	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string) {
+	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
 
 		if (apikey) {
@@ -127,6 +135,8 @@ export class MendixSdkClient {
 
 		this._platformSdkClient = new PlatformSdkClient(this, username, apikey,
 			projectsApiEndpoint ? projectsApiEndpoint : MendixSdkClient.DEFAULT_PROJECTSAPI_ENDPOINT);
+
+		this._options = options ? options : { pollDelay: MendixSdkClient.DEFAULT_POLL_DELAY };
 	}
 
 	platform(): PlatformSdkClient {
@@ -137,13 +147,8 @@ export class MendixSdkClient {
 		return this._modelSdkClient;
 	}
 
-	/**
-	* Retrieve all your Mendix App projects.
-	*
-	* @returns An array of Project instances that each represent one of your Mendix Platform projects.
-	*/
-	retrieveProjects(): when.Promise<Project[]> {
-		return this._platformSdkClient.retrieveProjects(this);
+	options(): SdkOptions {
+		return this._options;
 	}
 }
 
@@ -174,12 +179,12 @@ export class PlatformSdkClient {
 	}
 
 	/**
-	* Creates a new app and commits it to the Team Server.
-	*
-	* @param projectName The name of the new app
-	* @param projectSummary (Optional) A short description of the new app
-	* @returns a Promise of a Mendix App Project
-	*/
+	 * Creates a new app and commits it to the Team Server.
+	 *
+	 * @param projectName The name of the new app
+	 * @param projectSummary (Optional) A short description of the new app
+	 * @returns a Promise of a Mendix App Project
+	 */
 	createNewApp(projectName: string, projectSummary?: string): when.Promise<Project> {
 		console.log(`Creating new project with name ${projectName} for user ${this._username}...`);
 
@@ -210,51 +215,12 @@ export class PlatformSdkClient {
 	}
 
 	/**
-	* TODO: implementation
-	*/
-	retrieveProjects(client: MendixSdkClient): when.Promise<Project[]> {
-		console.log(`Retrieving projects for user ${this._username}...`);
-
-		// TODO: Implement this properly, including templating of the entity
-		let apiClient = rest.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
-		return apiClient({
-			path: PlatformSdkClient.PROJECTS_API_PATH,
-			method: `POST`,
-			entity: null // TODO: templating
-		}).then(response => {
-			// TODO: Extract raw list of projects from response entity.
-			let rawProjects: [{}] = response.entity;
-
-			// TODO: Return a mapping of each raw project to a nicely typed representation.
-			let projects = rawProjects.map(raw => new Project(client, 'TODO-ID', 'Sprintr'));
-
-			console.log('Retrieved projects for user %s: %s', this._username, projects.map(p => p.id() + ':' + p.name()).join(', '));
-
-			return projects;
-		});
-	}
-
-	/**
-	* TODO: implementation
-	*/
-	retrieveBranches(project: Project): when.Promise<Branch[]> {
-		console.log('Retrieving branches for project %s : %s', project.id(), project.name());
-		return when.promise<Branch[]>((resolve, reject) => {
-			// TODO: Retrieve available branches from the Platform API
-			let branches: Branch[] = [];
-
-			console.log('Successfully retrieved branches for project %s : %s : %s', project.id(), project.name(), branches.map(b => b.name).join(', '));
-			resolve(branches);
-		});
-	}
-
-	/**
-	* Expose a specific Team Server revision as an Online Working Copy.
-	*
-	* @param project an instance of a Mendix App Project
-	* @param revision A Revision instance pointing to a revision number on a specific Team Server branch
-	* @returns a Promise of an OnlineWorkingCopy in the Mendix Model Server corresponding to the given project and revision.
-	*/
+	 * Expose a specific Team Server revision as an Online Working Copy.
+	 *
+	 * @param project an instance of a Mendix App Project
+	 * @param revision A Revision instance pointing to a revision number on a specific Team Server branch
+	 * @returns a Promise of an OnlineWorkingCopy in the Mendix Model Server corresponding to the given project and revision.
+	 */
 	createOnlineWorkingCopy(project: Project, revision: Revision): when.Promise<OnlineWorkingCopy> {
 		console.log(`Creating new online working copy for project ${project.id() } : ${project.name() }`);
 
@@ -301,13 +267,13 @@ export class PlatformSdkClient {
 	}
 
 	/**
-	* Commit changes in your Online Working Copy to your model back to the Team Server.
-	*
-	* @param workingCopy an OnlineWorkingCopy instance pointing to a working copy on the Mendix Model server.
-	* @param branchName (Optional) The name of the branch to commit to, or null for main line. Default is null.
-	* @param baseRevision (Optional) The base revision for this commit, or -1 for HEAD. Default is -1.
-	* @returns a Promise of a Team Server Revision corresponding to the given workingCopy.
-	*/
+	 * Commit changes in your Online Working Copy to your model back to the Team Server.
+	 *
+	 * @param workingCopy an OnlineWorkingCopy instance pointing to a working copy on the Mendix Model server.
+	 * @param branchName (Optional) The name of the branch to commit to, or null for main line. Default is null.
+	 * @param baseRevision (Optional) The base revision for this commit, or -1 for HEAD. Default is -1.
+	 * @returns a Promise of a Team Server Revision corresponding to the given workingCopy.
+	 */
 	commitToTeamServer(workingCopy: OnlineWorkingCopy, branchName: string = null, baseRevision: number = -1): when.Promise<Revision> {
 		if (workingCopy == null || workingCopy.project() == null) {
 			return when.reject<Revision>(`Working copy is empty or does not contain referral to project`);
@@ -376,7 +342,7 @@ export class PlatformSdkClient {
 						this._awaitJobResult(jobId).done(resolve, reject);
 					}
 				}, reject);
-			}, 1000);
+			}, this._client.options().pollDelay);
 		});
 	}
 
@@ -389,9 +355,7 @@ export class PlatformSdkClient {
 			headers: {
 				'Content-Type': 'text/xml;charset=UTF-8'
 			},
-			mixin: {
-				rejectUnauthorized: false
-			},
+			mixin: {},
 			entity: payload
 		};
 	}
@@ -537,10 +501,10 @@ export class Project {
 	private _name: string;
 
 	/**
-	* @param client a MendixSdkClient instance
-	* @param id Project id returned by the Mendix Projects API
-	* @param name The desired project name
-	*/
+	 * @param client a MendixSdkClient instance
+	 * @param id Project id returned by the Mendix Projects API
+	 * @param name The desired project name
+	 */
 	constructor(client: MendixSdkClient, id: string, name: string) {
 		this._client = client;
 		this._id = id;
@@ -548,40 +512,28 @@ export class Project {
 	}
 
 	/**
-		 * @returns ID of this Project
-		 */
+	 * @returns ID of this Project
+	 */
 	id(): string {
 		return this._id;
 	}
 
 	/**
-		 * @returns name of this Project
-		 */
+	 * @returns name of this Project
+	 */
 	name(): string {
 		return this._name;
 	}
 
-	retrieveBranches(): when.Promise<Branch[]> {
-		return this._client.platform().retrieveBranches(this);
-	}
-
 	/**
-		 * Create a new Online Working Copy for the given project based on a given revision.
-		 *
-		 * @param revision The team server revision number.
-		 * @returns A Promise of a WorkingCopy instance that represents your new Online Working Copy.
-		 */
+	 * Create a new Online Working Copy for the given project based on a given revision.
+	 *
+	 * @param revision The team server revision number.
+	 * @returns A Promise of a WorkingCopy instance that represents your new Online Working Copy.
+	 */
 	createWorkingCopy(revision?: Revision): when.Promise<OnlineWorkingCopy> {
 		return this._client.platform().createOnlineWorkingCopy(this, revision);
 	};
-
-	createFeedbackItem(name: string, description: string, onSuccess?: (feedbackItem: FeedbackItem) => void, onError?: (error) => void): void {
-		// TODO
-	}
-
-	createUserStory(name: string, description: string, onSuccess: (userStory: UserStory) => void, onError: (error) => void): void {
-		// TODO
-	}
 }
 
 /**
@@ -601,44 +553,44 @@ export class OnlineWorkingCopy {
 	}
 
 	/**
-		 * @returns ID of this Online Working Copy
-		 */
+	 * @returns ID of this Online Working Copy
+	 */
 	id(): string {
 		return this._id;
 	}
 
 	/**
-	* @returns Revision (which contains the team server source branch) of this Online Working Copy
-	*/
+	 * @returns Revision (which contains the team server source branch) of this Online Working Copy
+	 */
 	sourceRevision(): Revision {
 		return this._sourceRevision;
 	}
 
 	/**
-		 * @returns The project of which this Online Working Copy contains a model snapshot.
-		 */
+	 * @returns The project of which this Online Working Copy contains a model snapshot.
+	 */
 	project(): Project {
 		return this._sourceRevision.branch().project();
 	}
 
 	/**
-		 * @returns The model stored in this Online Working Copy
-		 */
+	 * @returns The model stored in this Online Working Copy
+	 */
 	model(): IModel {
 		return this._model;
 	}
 
 	/**
-		 * Commit changes in this Online Working Copy to the Team Server.
-		 * IMPORTANT: After committing, the connection to the Model Server is closed.
-		 * This means that you cannot commit any changes you make to the working copy after first committing.
-		 * If you want to make any further changes, create a new working copy by calling createWorkingCopy()
-		 * on the returned revision.
-		 *
-		 * @param branchName (Optional) the branch to commit to. Use null for main line.
-		 * @param baseRevision (Optional) the base revision of this commit.
-		 * @returns a Promise of a Team Server Revision
-		 */
+	 * Commit changes in this Online Working Copy to the Team Server.
+	 * IMPORTANT: After committing, the connection to the Model Server is closed.
+	 * This means that you cannot commit any changes you make to the working copy after first committing.
+	 * If you want to make any further changes, create a new working copy by calling createWorkingCopy()
+	 * on the returned revision.
+	 *
+	 * @param branchName (Optional) the branch to commit to. Use null for main line.
+	 * @param baseRevision (Optional) the base revision of this commit.
+	 * @returns a Promise of a Team Server Revision
+	 */
 	commit(branchName?: string, baseRevision?: number): when.Promise<Revision> {
 		return when.promise<void>((resolve, reject) => {
 			console.log(`Closing connection to Model API...`);
@@ -678,20 +630,6 @@ export class Revision {
 	createWorkingCopy(): when.Promise<OnlineWorkingCopy> {
 		return this._branch.project().createWorkingCopy(this);
 	}
-
-	/**
-		 * TODO: Implementation
-		 */
-	deploy(onSuccess: (deploymentInfo: DeploymentInfo) => void, onError: (error) => void): when.Promise<DeploymentInfo> {
-		return when.promise<DeploymentInfo>((resolve, reject) => {
-			console.log('Deploying %s@%d of %s:%s...', this._branch.name(), this._num, this._branch.project().name(), this._branch.project().id());
-
-			let deploymentInfo: DeploymentInfo = null;
-
-			console.log('Deployment of %s@%d of %s:%s successful.', this._branch.name(), this._num, this._branch.project().name(), this._branch.project().id());
-			resolve(deploymentInfo);
-		});
-	}
 }
 
 /**
@@ -713,42 +651,14 @@ export class Branch {
 	name(): string {
 		return this._name;
 	}
-
-	retrieveRevisions(): when.Promise<Revision[]> {
-		return when.promise<Revision[]>((resolve, reject) => {
-			console.log(`Retrieving revisions for project ${this._project.name() } branch ${this.name}...`);
-
-			// TODO: Retrieve revisions for this branch with the Platform API
-			let revisions: Revision[] = null;
-
-			resolve(revisions);
-		});
-	}
 }
 
-export interface DeploymentInfo {
-	applicationUrl(): string;
-}
-
-export interface FeedbackItem {
-
-}
-
-export interface UserStory {
-
-}
-
-function rejectWithError(error: Error, reject: (reason: any) => void): void {
-	let errorType = typeof (error);
-	switch (errorType) {
-		case 'ParseError':
-			reject(`Response parsing error: ${error.message}. Please consult https://mxforum.mendix.com/`);
-			break;
-		case 'EmptyError':
-			reject(`Empty response error: ${error.message}. Please consult https://mxforum.mendix.com/`);
-			break;
-		default:
-			reject(`${error.name}: ${error.message}. Please consult https://mxforum.mendix.com/`);
-			break;
-	}
+/**
+ * SDK Options
+ */
+export interface SdkOptions {
+	/**
+	 * @property Used for running tests with mocks.
+	 */
+	pollDelay?: number
 }
