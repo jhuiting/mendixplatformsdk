@@ -648,7 +648,7 @@ export class Branch {
 }
 
 /**
- * Options
+ * SDK Options
  */
 export interface SdkOptions {
 	pollDelay: number
