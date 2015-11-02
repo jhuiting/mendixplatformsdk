@@ -91,7 +91,7 @@ function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClie
 		openId: null,
 		projectsApiEndpoint: 'https://sprintr.home.mendix.dev',
 		modelApiEndpoint: 'https://model-api.mendix.dev',
-		options: {pollDelay: 1}
+		options: { pollDelay: 1 }
 	};
 	return new sdk.MendixSdkClient(
 		config.username ? config.username : defaultConfig.username,
@@ -205,7 +205,7 @@ describe('sdk', () => {
 					.should.eventually.be.rejectedWith(`404`);
 			});
 		});
-		
+
 		describe('commit to teamserver', function() {
 
 			this.timeout(50000);
@@ -324,7 +324,7 @@ describe('sdk', () => {
 				});
 			}
 		});
-		
+
 		function updateModel(wc: sdk.OnlineWorkingCopy): sdk.OnlineWorkingCopy {
 			const project = wc.model().root;
 			const mod = new projects.Module(project);
@@ -335,84 +335,3 @@ describe('sdk', () => {
 
 	});
 });
-/*
- *
- * MENDIX SDK DEVELOPER CODE
- *
- */
-
-if (false) {
-	let projectName = `project`;
-	let branchName = null;
-
-	// Retrieve all my projects
-	client.retrieveProjects()
-		.then(projects => {
-			// Find the 'Sprintr' project
-			let sprintr = projects.filter(p => p.name() === projectName)[0];
-
-			// Take HEAD/latest revision from trunk/main line and import into new model server working copy
-			return sprintr.createWorkingCopy();
-		})
-		.then(manipulateModel)
-		.then(workingCopy => {
-			// After successful manipulation, commit changes back to the teamserver.
-			return workingCopy.commit();
-		})
-		.done(revision => {
-			console.log('Successfully committed changes as revision %d on branch %s', revision.num(), revision.branch().name());
-		}, errorHandler);
-
-	client.retrieveProjects()
-		.then(projects => projects.filter(p => p.name() === projectName)[0])
-		.then(project => project.retrieveBranches())
-		.then(branches => branches.filter(b => b.name() === branchName)[0])
-		.then(branch => branch.retrieveRevisions())
-		.then(revisions => revisions.reduce((prev: sdk.Revision, cur: sdk.Revision) => prev.num > cur.num ? prev : cur))
-		.then(revision => revision.createWorkingCopy())
-		.then(workingCopy => {
-			// Do changes ...
-			return workingCopy;
-		})
-		.then(workingCopy => {
-			// Then commit ...
-			return workingCopy.commit(/*CommitStyle.CreateBranch*/);
-		})
-		.done(revision => {
-			// Deploy ...
-			revision.deploy(
-				(deploymentInfo) => console.log('Successfully deployed your app on %s', deploymentInfo.applicationUrl()),
-				errorHandler);
-		}, errorHandler);
-
-	function manipulateModel(workingCopy: sdk.OnlineWorkingCopy): when.Promise<sdk.OnlineWorkingCopy> {
-		return when.promise<sdk.OnlineWorkingCopy>((resolve, reject) => {
-			// Use 'workingCopy.model()' to get access to the model stored in the working copy so that you can analyze/manipulate your model:
-			workingCopy.model().allMicroflows().forEach(mf => {
-				console.log('Found microflow: %s', mf.qualifiedName);
-
-				let module = workingCopy.model().allModules().filter(m => m.name === 'MyFirstModule')[0];
-				module.domainModel.load(domainModel => {
-					let entity = new domainmodels.Entity();
-					entity.name = 'Customer';
-					// etc.
-
-					domainModel.entities.push(entity);
-
-					resolve(workingCopy);
-				});
-			});
-		});
-	}
-
-	/**
-* Generic error handler that exits the script after printing error details.
-*/
-	function errorHandler(error): void {
-		console.log('Something went wrong:');
-		console.log(error);
-
-		process.exit(1);
-	}
-
-}
