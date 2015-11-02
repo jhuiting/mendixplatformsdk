@@ -650,8 +650,10 @@ export class Branch {
 
 /**
  * SDK Options
- * - pollDelay: used for running tests with mocks.
  */
 export interface SdkOptions {
+	/**
+	 * @property Used for running tests with mocks.
+	 */
 	pollDelay?: number
 }
