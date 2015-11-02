@@ -644,14 +644,30 @@ export class Branch {
  *
  */
 
+/**
+  * Logs a message to the console with a timestamp and an arbitrary number of parameters.
+  * @param message The message to be logged
+  * @param optionalParams Zero or more parameters to be added to the log message.
+  */
 function myLog(message, ...optionalParams: any[]): void {
 	console.log(`${Date.now() }: ${message} ${optionalParams}`);
 }
 
+/**
+  * Any model unit or that extends IAbstractElement has a load() method.
+  * Use this interface to pass loadable model units to loadAsPromise().
+  */
 interface Loadable<T> {
 	load(callback: (result: T) => void): void;
 }
 
+/**
+  * Any model unit or that extends IAbstractElement has a load() method.
+  * This function is a convenience function that allows you load a model unit and return a Promise,
+  * instead of having to provide a callback method.
+  * @param loadable Any model unit that implements a load() method.
+  * @returns a Promise of an object that is of the same type as the loadable parameter.
+  */
 function loadAsPromise<T>(loadable: Loadable<T>): When.Promise<T> {
 	return when.promise<T>((resolve, reject) => loadable.load(resolve));
 }
