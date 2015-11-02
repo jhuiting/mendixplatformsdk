@@ -91,7 +91,7 @@ function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClie
 		openId: null,
 		projectsApiEndpoint: 'https://sprintr.home.mendix.dev',
 		modelApiEndpoint: 'https://model-api.mendix.dev',
-		options: new sdk.SdkOptions(1)
+		options: {pollDelay: 1}
 	};
 	return new sdk.MendixSdkClient(
 		config.username ? config.username : defaultConfig.username,

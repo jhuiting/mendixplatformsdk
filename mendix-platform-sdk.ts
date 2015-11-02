@@ -130,7 +130,7 @@ export class MendixSdkClient {
 		this._platformSdkClient = new PlatformSdkClient(this, username, apikey,
 			projectsApiEndpoint ? projectsApiEndpoint : MendixSdkClient.DEFAULT_PROJECTSAPI_ENDPOINT);
 
-		this._options = options ? options : new SdkOptions(MendixSdkClient.DEFAULT_POLL_DELAY);
+		this._options = options ? options : { pollDelay: MendixSdkClient.DEFAULT_POLL_DELAY };
 	}
 
 	platform(): PlatformSdkClient {
@@ -384,7 +384,7 @@ export class PlatformSdkClient {
 						this._awaitJobResult(jobId).done(resolve, reject);
 					}
 				}, reject);
-			}, this._client.options().pollDelay());
+			}, this._client.options().pollDelay);
 		});
 	}
 
@@ -735,17 +735,8 @@ export class Branch {
 /**
  * Options
  */
-export class SdkOptions {
-
-	private _pollDelay: number;
-
-	constructor(pollDelay?: number) {
-		this._pollDelay = pollDelay;
-	}
-
-	pollDelay(): number {
-		return this._pollDelay;
-	}
+export interface SdkOptions {
+	pollDelay: number
 }
 
 export interface DeploymentInfo {
