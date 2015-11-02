@@ -91,17 +91,20 @@ interface RequestContents {
 export class MendixSdkClient {
 	private _platformSdkClient: PlatformSdkClient;
 	private _modelSdkClient: ModelSdkClient;
+	private _options: SdkOptions;
 
 	private static DEFAULT_MODELAPI_ENDPOINT = `https://model-api.cfapps.io`;
 	private static DEFAULT_PROJECTSAPI_ENDPOINT = `https://sprintr.home.mendix.com`;
 
+	private static DEFAULT_POLL_DELAY = 1000;
+
 	/**
-	 * Create a new client to access [Mendix](developer.mendix.com) Platform and Model APIs.
-	 *
-	 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
-	 * @param apikey API key for your account.
-	 */
-	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string) {
+		 * Create a new client to access [Mendix](developer.mendix.com) Platform and Model APIs.
+		 *
+		 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
+		 * @param apikey API key for your account.
+		 */
+	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
 
 		if (apikey) {
@@ -126,6 +129,8 @@ export class MendixSdkClient {
 
 		this._platformSdkClient = new PlatformSdkClient(this, username, apikey,
 			projectsApiEndpoint ? projectsApiEndpoint : MendixSdkClient.DEFAULT_PROJECTSAPI_ENDPOINT);
+
+		this._options = options ? options : { pollDelay: MendixSdkClient.DEFAULT_POLL_DELAY };
 	}
 
 	platform(): PlatformSdkClient {
@@ -134,6 +139,10 @@ export class MendixSdkClient {
 
 	model(): ModelSdkClient {
 		return this._modelSdkClient;
+	}
+
+	options(): SdkOptions {
+		return this._options;
 	}
 }
 
@@ -327,7 +336,7 @@ export class PlatformSdkClient {
 						this._awaitJobResult(jobId).done(resolve, reject);
 					}
 				}, reject);
-			}, 1000);
+			}, this._client.options().pollDelay);
 		});
 	}
 
@@ -649,7 +658,7 @@ export class Branch {
   * @param message The message to be logged
   * @param optionalParams Zero or more parameters to be added to the log message.
   */
-function myLog(message, ...optionalParams: any[]): void {
+export function myLog(message, ...optionalParams: any[]): void {
 	console.log(`${Date.now() }: ${message} ${optionalParams}`);
 }
 
@@ -657,7 +666,7 @@ function myLog(message, ...optionalParams: any[]): void {
   * Any model unit or that extends IAbstractElement has a load() method.
   * Use this interface to pass loadable model units to loadAsPromise().
   */
-interface Loadable<T> {
+export interface Loadable<T> {
 	load(callback: (result: T) => void): void;
 }
 
@@ -668,6 +677,13 @@ interface Loadable<T> {
   * @param loadable Any model unit that implements a load() method.
   * @returns a Promise of an object that is of the same type as the loadable parameter.
   */
-function loadAsPromise<T>(loadable: Loadable<T>): When.Promise<T> {
+export function loadAsPromise<T>(loadable: Loadable<T>): When.Promise<T> {
 	return when.promise<T>((resolve, reject) => loadable.load(resolve));
+}
+
+/**
+ * SDK Options
+ */
+export interface SdkOptions {
+	pollDelay?: number
 }
