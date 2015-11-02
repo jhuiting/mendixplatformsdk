@@ -8,6 +8,6 @@
 	"files": [
 		"mendix-platform-sdk.ts",
 		"test/test.ts",
-		"test/example.ts"
+		"test/smoke-test.ts"
 	]
 }
