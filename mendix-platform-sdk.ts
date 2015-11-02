@@ -103,6 +103,11 @@ export class MendixSdkClient {
 		 *
 		 * @param username Username of your account (same as username used to log in to the Mendix Development Portal)
 		 * @param apikey API key for your account.
+		 * @param password Alternative way to authenticate with username, password and openid
+		 * @param openid Alternative way to authenticate with username, password and openid
+		 * @param projectsApiEndpoint For internal use. Connects to a custom instance of the Projects API.
+		 * @param modelApiEndpoint For internal use. Connects to a custom instance of the Model API.
+		 * @param options a JSON object containing configuration options for the SDK Client.
 		 */
 	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
@@ -685,5 +690,8 @@ export function loadAsPromise<T>(loadable: Loadable<T>): When.Promise<T> {
  * SDK Options
  */
 export interface SdkOptions {
+	/**
+	 * @property Used for running tests with mocks.
+	 */
 	pollDelay?: number
 }
