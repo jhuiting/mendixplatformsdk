@@ -27,18 +27,16 @@ if (integrationTest) {
         it(`Smoke test`, () => {
             return client.platform().createNewApp(`NewApp-${Date.now() }`)
                 .then(project => project.createWorkingCopy())
-                .then(workingCopy => loadDomainModel(workingCopy))
                 .then(workingCopy => {
-                    const dm = pickDomainModel(workingCopy);
-                    const domainModel = dm.load();
-
-                    let entity = new domainmodels.Entity();
-                    entity.name = `NewEntity-${Date.now() }`;
-                    entity.location = { x: 100, y: 100 };
-
-                    domainModel.entities.push(entity);
-
-                    return workingCopy;
+                    const dm = pickDomainModel(workingCopy, `MyFirstModule`);
+                    return sdk.loadAsPromise(dm)
+                        .then(domainModel => {
+                            let entity = new domainmodels.Entity();
+                            entity.name = `NewEntity-${Date.now() }`;
+                            entity.location = { x: 100, y: 100 };
+                            domainModel.entities.push(entity);
+                            return workingCopy;
+                        });
                 })
                 .then(workingCopy => workingCopy.commit())
                 .should.eventually.be.fulfilled;
@@ -46,15 +44,7 @@ if (integrationTest) {
     });
 }
 
-function loadDomainModel(workingCopy: sdk.OnlineWorkingCopy): when.Promise<sdk.OnlineWorkingCopy> {
-    const dm = pickDomainModel(workingCopy);
-
-    return when.promise<sdk.OnlineWorkingCopy>((resolve, reject) => {
-        dm.load(dm => resolve(workingCopy));
-    })
-}
-
-function pickDomainModel(workingCopy: sdk.OnlineWorkingCopy): domainmodels.IDomainModel {
+function pickDomainModel(workingCopy: sdk.OnlineWorkingCopy, domainModelName: string): domainmodels.IDomainModel {
     return workingCopy.model().allDomainModels()
-        .filter(dm => dm.qualifiedName === 'MyFirstModule')[0];
+        .filter(dm => dm.qualifiedName === domainModelName)[0];
 }
