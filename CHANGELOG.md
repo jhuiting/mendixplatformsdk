@@ -11,6 +11,3 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - SSL certification check is conducted against online services
 - Render newlines in error messages properly
-
-### Removed
-- Non-working operations
