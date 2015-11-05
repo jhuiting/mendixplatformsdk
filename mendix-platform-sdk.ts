@@ -246,7 +246,7 @@ export class PlatformSdkClient {
 			.then(jobResult => {
 				const wcId: string = jobResult.result;
 
-				console.log('Successfully created new online working copy %s for project %s : %s', wcId, project.id(), project.name());
+				console.log(`Successfully created new online working copy ${wcId} for project ${project.id()} : ${project.name()}`);
 
 				return when.promise<OnlineWorkingCopy>((resolve, reject) => {
 					this._client.model().openWorkingCopy(wcId,
@@ -258,7 +258,7 @@ export class PlatformSdkClient {
 							resolve(workingCopy);
 						},
 						error => {
-							console.error('Failed to open new online working copy %s for project %s : %s:', wcId, project.id(), project.name());
+							console.error(`Failed to open new online working copy ${wcId} for project ${project.id()}: ${project.name()}:`);
 
 							reject(error);
 						});
@@ -328,7 +328,7 @@ export class PlatformSdkClient {
 				const request = this._createRequestContent(PlatformSdkClient.RetrieveJobStatusXml, { "JobId": jobId });
 
 				const client = rest
-					.wrap(this._createHttpErrorCodeInterceptor('Error when retrieving job status'))
+					.wrap(this._createHttpErrorCodeInterceptor(`Error when retrieving job status`))
 					.wrap(this._parseJobStatus())
 					.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
@@ -351,9 +351,9 @@ export class PlatformSdkClient {
 
 		return {
 			path: PlatformSdkClient.PROJECTS_API_PATH,
-			method: 'POST',
+			method: "POST",
 			headers: {
-				'Content-Type': 'text/xml;charset=UTF-8'
+				"Content-Type": "text/xml;charset=UTF-8"
 			},
 			mixin: {},
 			entity: payload
@@ -361,7 +361,7 @@ export class PlatformSdkClient {
 	}
 
 	private _compilePayload(template: string, data: Object): string {
-		const xmlPayloadTemplate = fs.readFileSync(template, 'utf8');
+		const xmlPayloadTemplate = fs.readFileSync(template, "utf8");
 		const compileXmlPayload = _.template(xmlPayloadTemplate);
 
 		const payload = compileXmlPayload(data);
@@ -373,9 +373,9 @@ export class PlatformSdkClient {
 		return interceptor({
 			success: (response, config, meta) => {
 				if (_.isEmpty(response.entity)) {
-					return when.reject<any>('Error: HTTP response entity missing');
+					return when.reject<any>(`Error: HTTP response entity missing`);
 				} else {
-					return this._parseAndQuery(response.entity, '$..Result[0]')
+					return this._parseAndQuery(response.entity, `$..Result[0]`)
 						.then(result => {
 							response.entity = result;
 							return response;
@@ -408,12 +408,12 @@ export class PlatformSdkClient {
 	}
 
 	private _parseJobResult(parsed): JobResult {
-		let jobId = jsonpath.query(parsed, '$..JobId[0]')[0];
-		let startTime = jsonpath.query(parsed, '$..StartTime[0]')[0];
-		let endTime = jsonpath.query(parsed, '$..EndTime[0]')[0];
-		let state = jsonpath.query(parsed, '$..State[0]')[0];
-		let result = jsonpath.query(parsed, '$..Result[0]')[0];
-		let errorMessage = jsonpath.query(parsed, '$..ErrorMessage[0]')[0];
+		let jobId = jsonpath.query(parsed, `$..JobId[0]`)[0];
+		let startTime = jsonpath.query(parsed, `$..StartTime[0]`)[0];
+		let endTime = jsonpath.query(parsed, `$..EndTime[0]`)[0];
+		let state = jsonpath.query(parsed, `$..State[0]`)[0];
+		let result = jsonpath.query(parsed, `$..Result[0]`)[0];
+		let errorMessage = jsonpath.query(parsed, `$..ErrorMessage[0]`)[0];
 
 		return {
 			jobId: jobId,
@@ -458,7 +458,7 @@ export class PlatformSdkClient {
 				} else if (response.status.code === PlatformSdkClient.HTTP_STATUS_OK_RESPONSE_CODE) {
 					resolve(response);
 				} else if (response.status.code === PlatformSdkClient.HTTP_STATUS_WS_ERROR_RESPONSE_CODE) {
-					this._parseAndQuery(response.entity, '$..faultstring[0]')
+					this._parseAndQuery(response.entity, `$..faultstring[0]`)
 						.done(
 						(cause) => {
 							reject(`${errorMessage}: ${cause.replace(/\\[\r\n]+/g, os.EOL)}`);
@@ -478,7 +478,7 @@ export class PlatformSdkClient {
 	}
 
 	private static _templatePath(filename: string): string {
-		return path.join(__dirname, 'templates', filename);
+		return path.join(__dirname, `templates`, filename);
 	}
 }
 
@@ -694,5 +694,5 @@ export interface SdkOptions {
 	/**
 	 * @property Used for running tests with mocks.
 	 */
-	pollDelay?: number
+	pollDelay?: number;
 }
