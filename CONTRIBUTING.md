@@ -1,15 +1,13 @@
-How to build (prerequisite: you have GNU patch):
+# Contributing
+To build (prerequisite: you have GNU patch):
 
-$ npm run build
+    npm run build
 
-How to publish:
+To publish:
 
-$npm login
+    npm login
+    username: {see Keepass}
+    password: {see Keepass}
+    email: {see Keepass}
 
-username: "mendix"
-
-password: {see Keepass}
-
-email: sdk@mendix.com
-
-$ npm publish
+    npm publish
