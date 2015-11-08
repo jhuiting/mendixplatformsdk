@@ -1,9 +1,9 @@
 [![NPM](https://nodei.co/npm/mendixplatformsdk.png?compact=true)](https://nodei.co/npm/mendixplatformsdk/)
 
-Mendix Platform SDK
+# Mendix Platform SDK
 
-Installation:
+## Installation
 
-npm install mendixplatformsdk
+    npm install mendixplatformsdk
 
-[![Join the chat at https://gitter.im/mendix/mendixplatformsdk](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mendix/mendixplatformsdk?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/mendix/mendixplatformsdk.svg?branch=master)](https://travis-ci.org/mendix/mendixplatformsdk) [![Join the chat at https://gitter.im/mendix/mendixplatformsdk](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mendix/mendixplatformsdk?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
