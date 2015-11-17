@@ -10,7 +10,7 @@
     "tsc": "tsc",
     "build": "npm install && tsd install && tsc && patch -p0 < mendix-platform-sdk.d.ts.patch",
     "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts",
-    "lint": "tslint mendix-platform-sdk.ts"
+    "lint": "tslint mendix-platform-sdk.ts test/test.ts test/smoke-test.ts"
   },
   "author": "",
   "license": "MIT",
