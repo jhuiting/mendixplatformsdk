@@ -58,6 +58,7 @@ chai.use(chaiAsPromised);
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const projectId = `ef03c9be-278c-486f-b36c-b1a7b0740ea8`;
+const unsupportedVersionProjectId = `d3bc06c2-a82d-4afb-8a64-998437c84656`;
 const projectName = `Roundtrip Integration`;
 
 describe(`MendixSdkClient credentials`, function() {
@@ -162,11 +163,14 @@ describe(`sdk`, () => {
 		});
 
 		const roundTripProject = new sdk.Project(client, projectId, projectName);
+		const unsupportedProject = new sdk.Project(client, unsupportedVersionProjectId, `unsupported`);
 
 		const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
 		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
 
 		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(3, mainLineOnRoundTrip);
+		const validRevisionOnMainLineOnUnsupportedProject = new sdk.Revision(-1, new sdk.Branch(unsupportedProject, null));
+
 		const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);
 		const revisionOnNonExistentBranch = new sdk.Revision(-1, nonExistentBranchOnRoundTrip);
 
@@ -181,6 +185,10 @@ describe(`sdk`, () => {
 			it(`should succeed with an existing project`, () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
 					.should.eventually.be.fulfilled;
+			});
+			it(`should fail because of unsupported model version`, () => {
+				return client.platform().createOnlineWorkingCopy(unsupportedProject, validRevisionOnMainLineOnUnsupportedProject)
+					.should.eventually.be.rejectedWith(`The working copy was created with version 5.1.1 of the Business Modeler which is not supported by the Model API.`);
 			});
 			it(`should fail because project does not exist`, () => {
 				return client.platform().createOnlineWorkingCopy(nonExistentProject, revisionOnNonExistentProject)
