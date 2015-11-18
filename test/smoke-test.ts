@@ -1,23 +1,23 @@
 /// <reference path='../typings/tsd.d.ts' />
 
-import {IModel, domainmodels} from 'mendixmodelsdk';
+import {IModel, domainmodels} from "mendixmodelsdk";
 
-import sdk = require('../mendix-platform-sdk');
-import when = require('when');
-import chai = require('chai');
+import sdk = require("../mendix-platform-sdk");
+import when = require("when");
+import chai = require("chai");
 var expect = chai.expect;
 var assert = chai.assert;
 var should = chai.should();
-chai.use(require('chai-string'));
+chai.use(require("chai-string"));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const username = 'richard.ford51@example.com';
-const apikey = '364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1';
+const username = `richard.ford51@example.com`;
+const apikey = `364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1`;
 
-const client = new sdk.MendixSdkClient(username, apikey, null, null, 'https://sprintr.home.mendix.dev', 'https://model-api.mendix.dev');
+const client = new sdk.MendixSdkClient(username, apikey, null, null, `https://sprintr.home.mendix.dev`, `https://model-api.mendix.dev`);
 
 var integrationTest = process.env.INTEGRATION === "1";
 
