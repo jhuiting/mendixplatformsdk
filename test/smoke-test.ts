@@ -31,7 +31,7 @@ if (integrationTest) {
                     const dm = pickDomainModel(workingCopy, `MyFirstModule`);
                     return sdk.loadAsPromise(dm)
                         .then(domainModel => {
-                            let entity = new domainmodels.Entity();
+                            let entity = domainmodels.Entity.create(workingCopy.model());
                             entity.name = `NewEntity-${Date.now() }`;
                             entity.location = { x: 100, y: 100 };
                             domainModel.entities.push(entity);
