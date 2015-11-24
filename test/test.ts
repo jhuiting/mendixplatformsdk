@@ -337,9 +337,8 @@ describe(`sdk`, () => {
 
 		function updateModel(wc: sdk.OnlineWorkingCopy): sdk.OnlineWorkingCopy {
 			const project = wc.model().root;
-			const mod = new projects.Module(project);
+			const mod = projects.Module.createIn(project);
 			mod.name = `NewModule_${Date.now() }`;
-			project.modules.push(mod);
 			return wc;
 		}
 
