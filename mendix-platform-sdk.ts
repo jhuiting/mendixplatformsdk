@@ -23,7 +23,7 @@ THE SOFTWARE.
 */
 
 /// <reference path="./typings/tsd.d.ts" />
-import {ModelSdkClient, IModel, configuration, domainmodels, microflows, Model} from "mendixmodelsdk";
+import {ModelSdkClient, IModel, Model, configuration, domainmodels, microflows} from "mendixmodelsdk";
 
 import fs = require("fs");
 import os = require("os");
