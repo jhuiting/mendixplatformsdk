@@ -1,6 +1,6 @@
 {
   "name": "mendixplatformsdk",
-  "version": "0.8.2",
+  "version": "1.0.0-rc.0",
   "description": "",
   "main": "mendix-platform-sdk.js",
   "typings": "mendix-platform-sdk",
@@ -22,7 +22,7 @@
   "dependencies": {
     "jsonpath": "^0.2.0",
     "lodash": "^3.10.1",
-    "mendixmodelsdk": "../mendixmodelsdk/model-sdk/",
+    "mendixmodelsdk": "1.0.0-rc.0",
     "rest": "^1.3.1",
     "when": "^3.7.3",
     "xml2js": "^0.4.12"
