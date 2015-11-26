@@ -126,7 +126,7 @@ describe(`sdk`, () => {
 
 		describe(`create new app`, function() { //function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
 
-			this.timeout(50000);
+			this.timeout(100000);
 
 			const projectName = `mySdkProject`;
 			const longProjectName = `This is a really long name that no one will actually do this at all 123456!!`;
@@ -168,7 +168,7 @@ describe(`sdk`, () => {
 		const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
 		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
 
-		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(3, mainLineOnRoundTrip);
+		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(8, mainLineOnRoundTrip);
 		const validRevisionOnMainLineOnUnsupportedProject = new sdk.Revision(-1, new sdk.Branch(unsupportedProject, null));
 
 		const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);
