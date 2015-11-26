@@ -1,29 +1,29 @@
 /// <reference path='../typings/tsd.d.ts' />
 
-import {IModel, domainmodels} from 'mendixmodelsdk';
+import {IModel, domainmodels} from "mendixmodelsdk";
 
-import sdk = require('../mendix-platform-sdk');
-import when = require('when');
-import chai = require('chai');
+import sdk = require("../mendix-platform-sdk");
+import when = require("when");
+import chai = require("chai");
 var expect = chai.expect;
 var assert = chai.assert;
 var should = chai.should();
-chai.use(require('chai-string'));
+chai.use(require("chai-string"));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const username = 'richard.ford51@example.com';
-const apikey = '364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1';
+const username = `richard.ford51@example.com`;
+const apikey = `364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1`;
 
-const client = new sdk.MendixSdkClient(username, apikey, null, null, 'https://sprintr.home.mendix.dev', 'https://model-api.mendix.dev');
+const client = new sdk.MendixSdkClient(username, apikey, null, null, `https://sprintr.home.mendix.dev`, `https://model-api.mendix.dev`);
 
 var integrationTest = process.env.INTEGRATION === "1";
 
 if (integrationTest) {
     describe(`Teamserver - Modelserver Integration`, function() {
-        this.timeout(50000);
+        this.timeout(100000);
         it(`Smoke test`, () => {
             return client.platform().createNewApp(`NewApp-${Date.now() }`)
                 .then(project => project.createWorkingCopy())
@@ -31,7 +31,7 @@ if (integrationTest) {
                     const dm = pickDomainModel(workingCopy, `MyFirstModule`);
                     return sdk.loadAsPromise(dm)
                         .then(domainModel => {
-                            let entity = new domainmodels.Entity();
+                            let entity = domainmodels.Entity.create(workingCopy.model());
                             entity.name = `NewEntity-${Date.now() }`;
                             entity.location = { x: 100, y: 100 };
                             domainModel.entities.push(entity);

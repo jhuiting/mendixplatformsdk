@@ -23,7 +23,7 @@ THE SOFTWARE.
 */
 
 /// <reference path="./typings/tsd.d.ts" />
-import {ModelSdkClient, IModel, configuration, domainmodels, microflows} from "mendixmodelsdk";
+import {ModelSdkClient, IModel, Model, configuration, domainmodels, microflows} from "mendixmodelsdk";
 
 import fs = require("fs");
 import os = require("os");
@@ -128,7 +128,7 @@ export class MendixSdkClient {
 			throw new Error(`Incomplete credentials`);
 		}
 
-		this._modelSdkClient = new ModelSdkClient({
+		this._modelSdkClient = Model.createSdkClient({
 			credentials: credentials,
 			endPoint: modelApiEndpoint ? modelApiEndpoint : MendixSdkClient.DEFAULT_MODELAPI_ENDPOINT
 		});
