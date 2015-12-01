@@ -12,12 +12,11 @@
     "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts",
     "lint": "tslint mendix-platform-sdk.ts test/test.ts test/smoke-test.ts"
   },
-  "author": "",
+  "author": "Mendix BV",
   "license": "MIT",
-  "repository":
-  {
-    "type" : "git",
-    "url" : "https://github.com/mendix/mendixplatformsdk.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mendix/mendixplatformsdk.git"
   },
   "dependencies": {
     "jsonpath": "^0.2.0",
@@ -38,6 +37,6 @@
     "tslint": "^2.5.1"
   },
   "peerDependencies": {
-    "mendixmodelsdk": "1.0.0-rc.0"
+    "mendixmodelsdk": "1.0.0"
   }
 }

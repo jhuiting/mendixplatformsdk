@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.0.0]
 ### Changed
 - Upgrade mendixmodelsdk version to 1.0.0
+- Use mendixmodelsdk as peer dependency
 
 ## [1.0.0-rc.0]
 ### Changed
