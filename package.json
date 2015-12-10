@@ -1,6 +1,6 @@
 {
   "name": "mendixplatformsdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "mendix-platform-sdk.js",
   "typings": "mendix-platform-sdk",
@@ -37,6 +37,6 @@
     "tslint": "^2.5.1"
   },
   "peerDependencies": {
-    "mendixmodelsdk": "1.0.0"
+    "mendixmodelsdk": "^1.0.0"
   }
 }
