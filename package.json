@@ -1,7 +1,7 @@
 {
   "name": "mendixplatformsdk",
   "version": "1.0.2",
-  "description": "",
+  "description": "Mendix Platform SDK",
   "main": "mendix-platform-sdk.js",
   "typings": "mendix-platform-sdk",
   "scripts": {
@@ -12,7 +12,10 @@
     "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts",
     "lint": "tslint mendix-platform-sdk.ts test/test.ts test/smoke-test.ts"
   },
-  "author": "Mendix BV",
+  "author": {
+    "name": "Mendix Platform",
+    "email": "platform@mendix.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
