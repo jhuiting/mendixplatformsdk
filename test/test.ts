@@ -168,7 +168,7 @@ describe(`sdk`, () => {
 		const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
 		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
 
-		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(8, mainLineOnRoundTrip);
+		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(12, mainLineOnRoundTrip);
 		const validRevisionOnMainLineOnUnsupportedProject = new sdk.Revision(-1, new sdk.Branch(unsupportedProject, null));
 
 		const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);

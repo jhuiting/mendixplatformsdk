@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.1]
+### Changed
+- Upgrade peer dependency on mendixmodelsdk to ^1.0.0 so 1.0.1 and later are supported.
+
 ## [1.0.0]
 ### Changed
 - Upgrade mendixmodelsdk version to 1.0.0

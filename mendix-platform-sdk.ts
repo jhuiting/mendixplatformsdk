@@ -94,7 +94,6 @@ export class MendixSdkClient {
 	private _modelSdkClient: ModelSdkClient;
 	private _options: SdkOptions;
 
-	private static DEFAULT_MODELAPI_ENDPOINT = `https://model-api.cfapps.io`;
 	private static DEFAULT_PROJECTSAPI_ENDPOINT = `https://sprintr.home.mendix.com`;
 
 	private static DEFAULT_POLL_DELAY = 1000;
@@ -128,10 +127,15 @@ export class MendixSdkClient {
 			throw new Error(`Incomplete credentials`);
 		}
 
-		this._modelSdkClient = Model.createSdkClient({
-			credentials: credentials,
-			endPoint: modelApiEndpoint ? modelApiEndpoint : MendixSdkClient.DEFAULT_MODELAPI_ENDPOINT
-		});
+		let connectionConfig: configuration.ISdkConfig = {
+			credentials: credentials
+		};
+
+		if (!(_.isEmpty(modelApiEndpoint))) {
+			connectionConfig["endPoint"] = modelApiEndpoint;
+		}
+
+		this._modelSdkClient = Model.createSdkClient(connectionConfig);
 
 		this._platformSdkClient = new PlatformSdkClient(this, username, apikey,
 			projectsApiEndpoint ? projectsApiEndpoint : MendixSdkClient.DEFAULT_PROJECTSAPI_ENDPOINT);
