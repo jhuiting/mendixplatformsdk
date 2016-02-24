@@ -40,6 +40,6 @@
     "tslint": "^2.5.1"
   },
   "peerDependencies": {
-    "mendixmodelsdk": "^1.0.2"
+    "mendixmodelsdk": "^2.0.0"
   }
 }
