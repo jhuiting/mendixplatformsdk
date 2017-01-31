@@ -1,15 +1,10 @@
-/// <reference path='../typings/tsd.d.ts' />
+import {domainmodels} from "mendixmodelsdk";
+import chaiAsPromised = require("chai-as-promised");
+import {MendixSdkClient, loadAsPromise, OnlineWorkingCopy} from "../mendix-platform-sdk";
 
-import {IModel, domainmodels} from "mendixmodelsdk";
-
-import sdk = require("../mendix-platform-sdk");
-import when = require("when");
-import chai = require("chai");
-var expect = chai.expect;
-var assert = chai.assert;
-var should = chai.should();
+const chai = require("chai");
+const should = chai.should();
 chai.use(require("chai-string"));
-var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -17,9 +12,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const username = `richard.ford51@example.com`;
 const apikey = `364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1`;
 
-const client = new sdk.MendixSdkClient(username, apikey, null, null, `https://sprintr.home.mendix.dev`, `https://model-api.mendix.dev`);
+const client = new MendixSdkClient(username, apikey, null, null, `https://sprintr.home.mendix.dev`, `https://model-api.mendix.dev`);
 
-var integrationTest = process.env.INTEGRATION === "1";
+const integrationTest = process.env.INTEGRATION === "1";
 
 if (integrationTest) {
     describe(`Teamserver - Modelserver Integration`, function() {
@@ -29,7 +24,7 @@ if (integrationTest) {
                 .then(project => project.createWorkingCopy())
                 .then(workingCopy => {
                     const dm = pickDomainModel(workingCopy, `MyFirstModule`);
-                    return sdk.loadAsPromise(dm)
+                    return loadAsPromise(dm)
                         .then(domainModel => {
                             let entity = domainmodels.Entity.create(workingCopy.model());
                             entity.name = `NewEntity-${Date.now() }`;
@@ -44,7 +39,7 @@ if (integrationTest) {
     });
 }
 
-function pickDomainModel(workingCopy: sdk.OnlineWorkingCopy, domainModelName: string): domainmodels.IDomainModel {
+function pickDomainModel(workingCopy: OnlineWorkingCopy, domainModelName: string): domainmodels.IDomainModel {
     return workingCopy.model().allDomainModels()
         .filter(dm => dm.qualifiedName === domainModelName)[0];
 }

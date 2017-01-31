@@ -22,17 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-/// <reference path="./typings/tsd.d.ts" />
-import {ModelSdkClient, IModel, Model, configuration, domainmodels, microflows} from "mendixmodelsdk";
+import {ModelSdkClient, IModel, Model, configuration} from "mendixmodelsdk";
 
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
-import when = require("when");
+import {promise, reject} from "when";
+import {call} from "when/node";
+import {isEmpty, template} from "lodash";
 
-import _ = require("lodash");
-
-import rest = require("rest");
+import * as rest from "rest";
 import interceptor = require("rest/interceptor");
 import pathPrefix = require("rest/interceptor/pathPrefix");
 import errorCode = require("rest/interceptor/errorCode");
@@ -131,7 +130,7 @@ export class MendixSdkClient {
 			credentials: credentials
 		};
 
-		if (!(_.isEmpty(modelApiEndpoint))) {
+		if (!(isEmpty(modelApiEndpoint))) {
 			connectionConfig["endPoint"] = modelApiEndpoint;
 		}
 
@@ -189,7 +188,7 @@ export class PlatformSdkClient {
 	 * @param projectSummary (Optional) A short description of the new app
 	 * @returns a Promise of a Mendix App Project
 	 */
-	createNewApp(projectName: string, projectSummary?: string): when.Promise<Project> {
+	createNewApp(projectName: string, projectSummary?: string): When.Promise<Project> {
 		console.log(`Creating new project with name ${projectName} for user ${this._username}...`);
 
 		const contents = this._createRequestContent(PlatformSdkClient.CreateNewAppXml, {
@@ -225,7 +224,7 @@ export class PlatformSdkClient {
 	 * @param revision A Revision instance pointing to a revision number on a specific Team Server branch
 	 * @returns a Promise of an OnlineWorkingCopy in the Mendix Model Server corresponding to the given project and revision.
 	 */
-	createOnlineWorkingCopy(project: Project, revision: Revision): when.Promise<OnlineWorkingCopy> {
+	createOnlineWorkingCopy(project: Project, revision: Revision): When.Promise<OnlineWorkingCopy> {
 		console.log(`Creating new online working copy for project ${project.id() } : ${project.name() }`);
 
 		const request = this._createRequestContent(PlatformSdkClient.CreateOnlineWorkingCopyXml, {
@@ -252,7 +251,7 @@ export class PlatformSdkClient {
 
 				console.log(`Successfully created new online working copy ${wcId} for project ${project.id()} : ${project.name()}`);
 
-				return when.promise<OnlineWorkingCopy>((resolve, reject) => {
+				return promise<OnlineWorkingCopy>((resolve, reject) => {
 					this._client.model().openWorkingCopy(wcId,
 						(model: IModel) => {
 							console.log(`Successfully opened new online working copy ${wcId} for project ${project.id() } : ${project.name() }`);
@@ -278,11 +277,11 @@ export class PlatformSdkClient {
 	 * @param baseRevision (Optional) The base revision for this commit, or -1 for HEAD. Default is -1.
 	 * @returns a Promise of a Team Server Revision corresponding to the given workingCopy.
 	 */
-	commitToTeamServer(workingCopy: OnlineWorkingCopy, branchName: string = null, baseRevision: number = -1): when.Promise<Revision> {
+	commitToTeamServer(workingCopy: OnlineWorkingCopy, branchName: string = null, baseRevision: number = -1): When.Promise<Revision> {
 		if (workingCopy == null || workingCopy.project() == null) {
-			return when.reject<Revision>(`Working copy is empty or does not contain referral to project`);
+			return reject<Revision>(`Working copy is empty or does not contain referral to project`);
 		} else if (baseRevision < -1) {
-			return when.reject<Revision>(`Invalid base revision ${baseRevision}`);
+			return reject<Revision>(`Invalid base revision ${baseRevision}`);
 		}
 
 		console.log(`Committing changes in online working copy ${workingCopy.id() } to team server project ${workingCopy.project().id() } branch ${branchName} base revision ${baseRevision}`);
@@ -308,7 +307,7 @@ export class PlatformSdkClient {
 				return this._awaitJobResult(jobId);
 			})
 			.then(jobResult => {
-				return when.promise<Revision>((resolve, reject) => {
+				return promise<Revision>((resolve, reject) => {
 
 					const num: number = parseInt(jobResult.result);
 
@@ -326,8 +325,8 @@ export class PlatformSdkClient {
 			});
 	}
 
-	private _awaitJobResult(jobId: string): when.Promise<JobResult> {
-		return when.promise<JobResult>((resolve, reject) => {
+	private _awaitJobResult(jobId: string): When.Promise<JobResult> {
+		return promise<JobResult>((resolve, reject) => {
 			setTimeout(() => {
 				const request = this._createRequestContent(PlatformSdkClient.RetrieveJobStatusXml, { "JobId": jobId });
 
@@ -336,7 +335,7 @@ export class PlatformSdkClient {
 					.wrap(this._parseJobStatus())
 					.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
-				client(request).done(response => {
+				client(request).then(response => {
 					let state: string = response.entity.state;
 					if (JobState[state] === JobState.Completed) {
 						resolve(response.entity);
@@ -364,20 +363,18 @@ export class PlatformSdkClient {
 		};
 	}
 
-	private _compilePayload(template: string, data: Object): string {
-		const xmlPayloadTemplate = fs.readFileSync(template, "utf8");
-		const compileXmlPayload = _.template(xmlPayloadTemplate);
+	private _compilePayload(templateName: string, data: Object): string {
+		const xmlPayloadTemplate = fs.readFileSync(templateName, "utf8");
+		const compileXmlPayload = template(xmlPayloadTemplate);
 
-		const payload = compileXmlPayload(data);
-
-		return payload;
+		return compileXmlPayload(data);
 	}
 
 	private _parseResult(): rest.Interceptor<{}> {
 		return interceptor({
-			success: (response, config, meta) => {
-				if (_.isEmpty(response.entity)) {
-					return when.reject<any>(`Error: HTTP response entity missing`);
+			success: response => {
+				if (isEmpty(response.entity)) {
+					return reject<any>(`Error: HTTP response entity missing`);
 				} else {
 					return this._parseAndQuery(response.entity, `$..Result[0]`)
 						.then(result => {
@@ -391,11 +388,11 @@ export class PlatformSdkClient {
 
 	private _parseJobStatus(): rest.Interceptor<{}> {
 		return interceptor({
-			success: (response, config, meta) => {
-				if (_.isEmpty(response.entity)) {
-					return when.reject<any>(`Error: HTTP response entity missing`);
+			success: response => {
+				if (isEmpty(response.entity)) {
+					return reject<any>(`Error: HTTP response entity missing`);
 				} else {
-					return when.promise<rest.Response>((resolve, reject) => {
+					return promise<rest.Response>((resolve, reject) => {
 						xml2js.parseString(response.entity, (error, parsed) => {
 							if (error) {
 								console.error(`Something went wrong: ${error}`);
@@ -429,17 +426,17 @@ export class PlatformSdkClient {
 		};
 	}
 
-	private _parseAndQuery(xml: string, query: string): when.Promise<string> {
+	private _parseAndQuery(xml: string, query: string): When.Promise<string> {
 		this._xmlParser.reset();
 
-		let valPromise = when.promise<string>((resolve, reject) => {
+		return promise<string>((resolve, reject) => {
 			this._xmlParser.parseString(xml, (err, result) => {
 				if (err) {
 					let error: ParseError = new ParseError(err);
 					reject(error);
 				} else {
 					let parseResult = jsonpath.query(result, query)[0];
-					if (_.isEmpty(parseResult)) {
+					if (isEmpty(parseResult)) {
 						let error: EmptyError = new EmptyError(`Query ${query} on ${parseResult} does not give any result`);
 						reject(error);
 					} else {
@@ -448,16 +445,14 @@ export class PlatformSdkClient {
 				}
 			});
 		});
-
-		return valPromise;
 	}
 
 	private _createHttpErrorCodeInterceptor(errorMessage: string): rest.Interceptor<{}> {
 		let response = response => {
-			return when.promise<rest.Response>((resolve, reject) => {
+			return promise<rest.Response>((resolve, reject) => {
 				if (response.error) {
 					reject(`Connection error: ${response.error}`);
-				} else if (_.isEmpty(response.status) || _.isEmpty(response.entity)) {
+				} else if (isEmpty(response.status) || isEmpty(response.entity)) {
 					reject(`Error: invalid HTTP response`);
 				} else if (response.status.code === PlatformSdkClient.HTTP_STATUS_OK_RESPONSE_CODE) {
 					resolve(response);
@@ -535,7 +530,7 @@ export class Project {
 	 * @param revision The team server revision number.
 	 * @returns A Promise of a WorkingCopy instance that represents your new Online Working Copy.
 	 */
-	createWorkingCopy(revision?: Revision): when.Promise<OnlineWorkingCopy> {
+	createWorkingCopy(revision?: Revision): When.Promise<OnlineWorkingCopy> {
 		return this._client.platform().createOnlineWorkingCopy(this, revision);
 	};
 }
@@ -595,8 +590,8 @@ export class OnlineWorkingCopy {
 	 * @param baseRevision (Optional) the base revision of this commit.
 	 * @returns a Promise of a Team Server Revision
 	 */
-	commit(branchName?: string, baseRevision?: number): when.Promise<Revision> {
-		return when.promise<void>((resolve, reject) => {
+	commit(branchName?: string, baseRevision?: number): When.Promise<Revision> {
+		return promise<void>((resolve, reject) => {
 			console.log(`Closing connection to Model API...`);
 			this._model.closeConnection(
 				() => {
@@ -631,7 +626,7 @@ export class Revision {
 		return this._branch;
 	}
 
-	createWorkingCopy(): when.Promise<OnlineWorkingCopy> {
+	createWorkingCopy(): When.Promise<OnlineWorkingCopy> {
 		return this._branch.project().createWorkingCopy(this);
 	}
 }
@@ -688,7 +683,7 @@ export interface Loadable<T> {
   * @returns a Promise of an object that is of the same type as the loadable parameter.
   */
 export function loadAsPromise<T>(loadable: Loadable<T>): When.Promise<T> {
-	return when.promise<T>((resolve, reject) => loadable.load(resolve));
+	return promise<T>((resolve, reject) => loadable.load(resolve));
 }
 
 /**

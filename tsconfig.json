@@ -1,13 +1,15 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es5",
-		"declaration": true,
-		"sourceMap": true
-	},
-	"files": [
-		"mendix-platform-sdk.ts",
-		"test/test.ts",
-		"test/smoke-test.ts"
-	]
+    "version": "2.1.4",
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": false,
+        "sourceMap": true,
+        "newLine": "LF"
+    },
+    "include": [
+      "mendix-platform-sdk.ts.ts",
+      "test/*.ts"
+    ]
 }

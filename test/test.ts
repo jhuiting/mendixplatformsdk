@@ -1,39 +1,14 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2015 Mendix
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
-import {IModel, domainmodels, projects} from "mendixmodelsdk";
+import {projects} from "mendixmodelsdk";
 
 import sdk = require("../mendix-platform-sdk");
 import when = require("when");
-import chai = require("chai");
-import nock = require("nock");
+import {expect} from "chai";
+import chaiAsPromised = require("chai-as-promised");
 
-var nockBack = require("nock").back;
-
+import {back as nockBack} from "nock";
 nockBack.fixtures = "nockfixtures/";
 
-var integrationTest = process.env.INTEGRATION === "1";
+const integrationTest = process.env.INTEGRATION === "1";
 
 // from https://github.com/pgte/nock
 // wild: all requests go out to the internet, don`t replay anything, doesn"t record anything (use this for integration test)
@@ -48,11 +23,9 @@ if (integrationTest) {
 	console.log(`Running unit tests. Network requests are mocked (see nockfixtures/fixtures.json). Several tests involving Model SDK will not be executed.`);
 }
 
-var expect = chai.expect;
-var assert = chai.assert;
-var should = chai.should();
+const chai = require("chai");
+const should = chai.should();
 chai.use(require("chai-string"));
-var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -246,7 +219,7 @@ describe(`sdk`, () => {
 				let sharedProject: sdk.Project;
 				let workingCopy: sdk.OnlineWorkingCopy;
 				before((mochaDone) => {
-					client.platform().createNewApp(`TestApp`).done(
+					client.platform().createNewApp(`TestApp`).then(
 						(project) => {
 							sharedProject = project;
 							mochaDone();
@@ -256,7 +229,7 @@ describe(`sdk`, () => {
 						});
 				});
 				beforeEach((mochaDone) => {
-					sharedProject.createWorkingCopy().done(
+					sharedProject.createWorkingCopy().then(
 						(wc) => {
 							workingCopy = wc;
 							mochaDone();

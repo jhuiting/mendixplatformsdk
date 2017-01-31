@@ -1,5 +1,5 @@
 # Contributing
-To build (prerequisite: you have GNU patch):
+To build:
 
     npm run build
 
