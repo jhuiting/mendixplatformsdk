@@ -4,7 +4,8 @@
   "description": "Mendix Platform SDK",
   "main": "dist/mendix-platform-sdk.js",
   "scripts": {
-    "test": "npm run build && mocha --require source-map-support/register",
+    "integration-test": "INTEGRATION=1 npm run build && mocha --require source-map-support/register",
+    "test": "INTEGRATION=0 npm run build && mocha --require source-map-support/register",
     "posttest": "npm run lint",
     "build": "npm install && tsc",
     "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts",

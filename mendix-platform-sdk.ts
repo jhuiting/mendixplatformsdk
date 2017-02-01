@@ -28,16 +28,17 @@ import fs = require("fs");
 import os = require("os");
 import path = require("path");
 import {promise, reject} from "when";
-import {call} from "when/node";
 import {isEmpty, template} from "lodash";
 
-import * as rest from "rest";
 import interceptor = require("rest/interceptor");
 import pathPrefix = require("rest/interceptor/pathPrefix");
 import errorCode = require("rest/interceptor/errorCode");
 
 import xml2js = require("xml2js");
 import jsonpath = require("jsonpath");
+import {Interceptor} from "rest";
+import {wrap} from "rest";
+import {Response} from "rest";
 
 /**
  * The state of the background job:
@@ -198,8 +199,7 @@ export class PlatformSdkClient {
 			"ApiKey": this._apikey
 		});
 
-		const apiClient = rest
-			.wrap(this._createHttpErrorCodeInterceptor(`Failed to create new app`))
+		const apiClient = wrap(this._createHttpErrorCodeInterceptor(`Failed to create new app`))
 			.wrap(this._parseResult())
 			.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
@@ -235,8 +235,7 @@ export class PlatformSdkClient {
 			"Revision": revision ? revision.num() : null
 		});
 
-		const apiClient = rest
-			.wrap(this._createHttpErrorCodeInterceptor(`Failed to create online working copy`))
+		const apiClient = wrap(this._createHttpErrorCodeInterceptor(`Failed to create online working copy`))
 			.wrap(this._parseResult())
 			.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
@@ -295,8 +294,7 @@ export class PlatformSdkClient {
 			"Revision": baseRevision
 		});
 
-		const apiClient = rest
-			.wrap(this._createHttpErrorCodeInterceptor(`Failed to commit to team server`))
+		const apiClient = wrap(this._createHttpErrorCodeInterceptor(`Failed to commit to team server`))
 			.wrap(this._parseResult())
 			.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
@@ -330,10 +328,9 @@ export class PlatformSdkClient {
 			setTimeout(() => {
 				const request = this._createRequestContent(PlatformSdkClient.RetrieveJobStatusXml, { "JobId": jobId });
 
-				const client = rest
-					.wrap(this._createHttpErrorCodeInterceptor(`Error when retrieving job status`))
-					.wrap(this._parseJobStatus())
-					.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
+				const client = wrap(this._createHttpErrorCodeInterceptor(`Error when retrieving job status`))
+                        .wrap(this._parseJobStatus())
+                        .wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
 				client(request).then(response => {
 					let state: string = response.entity.state;
@@ -370,7 +367,7 @@ export class PlatformSdkClient {
 		return compileXmlPayload(data);
 	}
 
-	private _parseResult(): rest.Interceptor<{}> {
+	private _parseResult(): Interceptor<{}> {
 		return interceptor({
 			success: response => {
 				if (isEmpty(response.entity)) {
@@ -386,13 +383,13 @@ export class PlatformSdkClient {
 		});
 	}
 
-	private _parseJobStatus(): rest.Interceptor<{}> {
+	private _parseJobStatus(): Interceptor<{}> {
 		return interceptor({
 			success: response => {
 				if (isEmpty(response.entity)) {
 					return reject<any>(`Error: HTTP response entity missing`);
 				} else {
-					return promise<rest.Response>((resolve, reject) => {
+					return promise<Response>((resolve, reject) => {
 						xml2js.parseString(response.entity, (error, parsed) => {
 							if (error) {
 								console.error(`Something went wrong: ${error}`);
@@ -447,9 +444,9 @@ export class PlatformSdkClient {
 		});
 	}
 
-	private _createHttpErrorCodeInterceptor(errorMessage: string): rest.Interceptor<{}> {
+	private _createHttpErrorCodeInterceptor(errorMessage: string): Interceptor<{}> {
 		let response = response => {
-			return promise<rest.Response>((resolve, reject) => {
+			return promise<Response>((resolve, reject) => {
 				if (response.error) {
 					reject(`Connection error: ${response.error}`);
 				} else if (isEmpty(response.status) || isEmpty(response.entity)) {
@@ -458,13 +455,7 @@ export class PlatformSdkClient {
 					resolve(response);
 				} else if (response.status.code === PlatformSdkClient.HTTP_STATUS_WS_ERROR_RESPONSE_CODE) {
 					this._parseAndQuery(response.entity, `$..faultstring[0]`)
-						.done(
-						(cause) => {
-							reject(`${errorMessage}: ${cause.replace(/\\[\r\n]+/g, os.EOL)}`);
-						},
-						(error) => {
-							reject(error);
-						});
+						.done((cause) => reject(`${errorMessage}: ${cause.replace(/\\[\r\n]+/g, os.EOL)}`), (error) => reject(error));
 				} else {
 					reject(`Unexpected HTTP response code: ${response.status.code} ${response.raw.response.statusMessage}. Please retry after a few minutes. If the problem persists, please consult https://mxforum.mendix.com`);
 				}

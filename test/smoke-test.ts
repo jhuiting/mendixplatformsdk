@@ -3,7 +3,6 @@ import chaiAsPromised = require("chai-as-promised");
 import {MendixSdkClient, loadAsPromise, OnlineWorkingCopy} from "../mendix-platform-sdk";
 
 const chai = require("chai");
-const should = chai.should();
 chai.use(require("chai-string"));
 chai.use(chaiAsPromised);
 
