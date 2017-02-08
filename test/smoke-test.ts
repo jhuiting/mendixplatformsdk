@@ -1,6 +1,6 @@
-import {domainmodels} from "mendixmodelsdk";
+import { domainmodels } from "mendixmodelsdk";
 import chaiAsPromised = require("chai-as-promised");
-import {MendixSdkClient, loadAsPromise, OnlineWorkingCopy} from "../mendix-platform-sdk";
+import { MendixSdkClient, loadAsPromise, OnlineWorkingCopy } from "../mendix-platform-sdk";
 
 const chai = require("chai");
 chai.use(require("chai-string"));
@@ -16,17 +16,17 @@ const client = new MendixSdkClient(username, apikey, null, null, `https://sprint
 const integrationTest = process.env.INTEGRATION === "1";
 
 if (integrationTest) {
-    describe(`Teamserver - Modelserver Integration`, function() {
+    describe(`Teamserver - Modelserver Integration`, function () {
         this.timeout(100000);
         it(`Smoke test`, () => {
-            return client.platform().createNewApp(`NewApp-${Date.now() }`)
+            return client.platform().createNewApp(`NewApp-${Date.now()}`)
                 .then(project => project.createWorkingCopy())
                 .then(workingCopy => {
                     const dm = pickDomainModel(workingCopy, `MyFirstModule`);
                     return loadAsPromise(dm)
                         .then(domainModel => {
                             let entity = domainmodels.Entity.create(workingCopy.model());
-                            entity.name = `NewEntity-${Date.now() }`;
+                            entity.name = `NewEntity-${Date.now()}`;
                             entity.location = { x: 100, y: 100 };
                             domainModel.entities.push(entity);
                             return workingCopy;

@@ -8,7 +8,7 @@
     "test": "INTEGRATION=0 npm run build && mocha --require source-map-support/register",
     "posttest": "npm run lint",
     "build": "npm install && tsc",
-    "doc": "typedoc --module commonjs --target es5 --out doc mendix-platform-sdk.ts",
+    "doc": "typedoc --module commonjs --target es5 --out doc  --exclude test mendix-platform-sdk.ts",
     "lint": "tslint mendix-platform-sdk.ts test/test.ts test/smoke-test.ts"
   },
   "author": {

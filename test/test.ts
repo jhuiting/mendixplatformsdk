@@ -1,7 +1,6 @@
 import {projects} from "mendixmodelsdk";
 
 import sdk = require("../mendix-platform-sdk");
-import when = require("when");
 import {expect} from "chai";
 import chaiAsPromised = require("chai-as-promised");
 
@@ -24,6 +23,7 @@ if (integrationTest) {
 }
 
 const chai = require("chai");
+// tslint:disable-next-line:no-unused-variable
 const should = chai.should();
 chai.use(require("chai-string"));
 chai.use(chaiAsPromised);
@@ -97,7 +97,7 @@ describe(`sdk`, () => {
 	nockBack(`fixtures.json`, function(nockDone) {
 		after(() => nockDone());
 
-		describe(`create new app`, function() { //function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
+		describe(`create new app`, function() { // function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
 
 			this.timeout(100000);
 
@@ -125,7 +125,8 @@ describe(`sdk`, () => {
 				return client.platform().createNewApp(`/?mySdkProject`, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Project name cannot contain`);
 			});
 			it(`should fail because of invalid API key`, () => {
-				return clientWithInvalidApiKey.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
+				const createNewApp = clientWithInvalidApiKey.platform().createNewApp(projectName, nonEmptyProjectSummary);
+				return createNewApp.should.eventually.be.rejectedWith(`Invalid username and/or API key`);
 			});
 			it(`should fail because of invalid hostname`, () => {
 				return clientWithInvalidHost.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Connection error`);
@@ -139,7 +140,9 @@ describe(`sdk`, () => {
 		const unsupportedProject = new sdk.Project(client, unsupportedVersionProjectId, `unsupported`);
 
 		const mainLineOnRoundTrip = new sdk.Branch(roundTripProject, null);
-		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch"); //including a space in the branch name will cause issue in the assertion due to encoding
+
+		// including a space in the branch name will cause issue in the assertion due to encoding
+		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch");
 
 		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(12, mainLineOnRoundTrip);
 		const validRevisionOnMainLineOnUnsupportedProject = new sdk.Revision(-1, new sdk.Branch(unsupportedProject, null));
@@ -173,7 +176,7 @@ describe(`sdk`, () => {
 			});
 			it(`should fail because branch does not exist`, () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, revisionOnNonExistentBranch)
-					.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' doesn't exist`); //yes, the quote is asymmetric, it's deliberate
+					.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' doesn't exist`); // yes, the quote is asymmetric, it's deliberate
 			});
 			it(`should fail because API Keys is invalid`, () => {
 				return clientWithInvalidApiKey.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
@@ -253,7 +256,8 @@ describe(`sdk`, () => {
 					return workingCopy.commit(nonExistentBranchName).should.eventually.be.rejectedWith(`${nonExistentBranchName}' doesn't exist`);
 				});
 				it(`should fail because revision is invalid`, () => {
-					return client.platform().commitToTeamServer(workingCopy, workingCopy.sourceRevision().branch().name(), -2).should.eventually.be.rejectedWith(`Invalid base revision`);
+					const commitToServer = client.platform().commitToTeamServer(workingCopy, workingCopy.sourceRevision().branch().name(), -2);
+					return commitToServer.should.eventually.be.rejectedWith(`Invalid base revision`);
 				});
 				it(`should fail because API Keys is invalid`, () => {
 					return clientWithInvalidApiKey.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Invalid username and/or API key`);

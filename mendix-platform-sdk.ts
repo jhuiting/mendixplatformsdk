@@ -22,23 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-import {ModelSdkClient, IModel, Model, configuration} from "mendixmodelsdk";
+import { ModelSdkClient, IModel, Model, configuration } from "mendixmodelsdk";
 
 import fs = require("fs");
 import os = require("os");
 import path = require("path");
-import {promise, reject} from "when";
-import {isEmpty, template} from "lodash";
+import { promise, reject } from "when";
+import { isEmpty, template } from "lodash";
 
 import interceptor = require("rest/interceptor");
 import pathPrefix = require("rest/interceptor/pathPrefix");
-import errorCode = require("rest/interceptor/errorCode");
 
 import xml2js = require("xml2js");
 import jsonpath = require("jsonpath");
-import {Interceptor} from "rest";
-import {wrap} from "rest";
-import {Response} from "rest";
+import { Interceptor } from "rest";
+import { wrap } from "rest";
+import { Response } from "rest";
 
 /**
  * The state of the background job:
@@ -94,9 +93,9 @@ export class MendixSdkClient {
 	private _modelSdkClient: ModelSdkClient;
 	private _options: SdkOptions;
 
-	private static DEFAULT_PROJECTSAPI_ENDPOINT = `https://sprintr.home.mendix.com`;
+	private static DEFAULT_PROJECTSAPI_ENDPOINT: string = `https://sprintr.home.mendix.com`;
 
-	private static DEFAULT_POLL_DELAY = 1000;
+	private static DEFAULT_POLL_DELAY: number = 1000;
 
 	/**
 		 * Create a new client to access [Mendix](developer.mendix.com) Platform and Model APIs.
@@ -109,7 +108,15 @@ export class MendixSdkClient {
 		 * @param modelApiEndpoint For internal use. Connects to a custom instance of the Model API.
 		 * @param options a JSON object containing configuration options for the SDK Client.
 		 */
-	constructor(username: string, apikey?: string, password?: string, openid?: string, projectsApiEndpoint?: string, modelApiEndpoint?: string, options?: SdkOptions) {
+	constructor(
+		username: string,
+		apikey?: string,
+		password?: string,
+		openid?: string,
+		projectsApiEndpoint?: string,
+		modelApiEndpoint?: string,
+		options?: SdkOptions
+	) {
 		let credentials: configuration.IBackendCredentials | configuration.ISdkCredentials;
 
 		if (apikey) {
@@ -164,15 +171,15 @@ export class PlatformSdkClient {
 	private _projectsApiEndpoint: string;
 	private _xmlParser: xml2js.Parser;
 
-	private static PROJECTS_API_PATH = `/ws/ProjectsAPI/9/soap1`;
+	private static PROJECTS_API_PATH: string = `/ws/ProjectsAPI/9/soap1`;
 
-	private static HTTP_STATUS_OK_RESPONSE_CODE = 200;
-	private static HTTP_STATUS_WS_ERROR_RESPONSE_CODE = 500;
+	private static HTTP_STATUS_OK_RESPONSE_CODE: number = 200;
+	private static HTTP_STATUS_WS_ERROR_RESPONSE_CODE: number = 500;
 
-	private static CreateNewAppXml = PlatformSdkClient._templatePath(`CreateNewApp.xml`);
-	private static CreateOnlineWorkingCopyXml = PlatformSdkClient._templatePath(`CreateOnlineWorkingCopy.xml`);
-	private static CommitWorkingCopyChangesXml = PlatformSdkClient._templatePath(`CommitWorkingCopyChanges.xml`);
-	private static RetrieveJobStatusXml = PlatformSdkClient._templatePath(`RetrieveJobStatus.xml`);
+	private static createNewAppXml: string = PlatformSdkClient._templatePath(`CreateNewApp.xml`);
+	private static createOnlineWorkingCopyXml: string = PlatformSdkClient._templatePath(`CreateOnlineWorkingCopy.xml`);
+	private static commitWorkingCopyChangesXml: string = PlatformSdkClient._templatePath(`CommitWorkingCopyChanges.xml`);
+	private static retrieveJobStatusXml: string = PlatformSdkClient._templatePath(`RetrieveJobStatus.xml`);
 
 	constructor(client: MendixSdkClient, username: string, apikey: string, projectsApiEndpoint: string) {
 		this._client = client;
@@ -192,7 +199,7 @@ export class PlatformSdkClient {
 	createNewApp(projectName: string, projectSummary?: string): When.Promise<Project> {
 		console.log(`Creating new project with name ${projectName} for user ${this._username}...`);
 
-		const contents = this._createRequestContent(PlatformSdkClient.CreateNewAppXml, {
+		const contents = this._createRequestContent(PlatformSdkClient.createNewAppXml, {
 			"ProjectName": projectName,
 			"ProjectSummary": projectSummary,
 			"User": this._username,
@@ -225,9 +232,9 @@ export class PlatformSdkClient {
 	 * @returns a Promise of an OnlineWorkingCopy in the Mendix Model Server corresponding to the given project and revision.
 	 */
 	createOnlineWorkingCopy(project: Project, revision: Revision): When.Promise<OnlineWorkingCopy> {
-		console.log(`Creating new online working copy for project ${project.id() } : ${project.name() }`);
+		console.log(`Creating new online working copy for project ${project.id()} : ${project.name()}`);
 
-		const request = this._createRequestContent(PlatformSdkClient.CreateOnlineWorkingCopyXml, {
+		const request = this._createRequestContent(PlatformSdkClient.createOnlineWorkingCopyXml, {
 			"Username": this._username,
 			"ApiKey": this._apikey,
 			"ProjectId": project.id(),
@@ -253,7 +260,7 @@ export class PlatformSdkClient {
 				return promise<OnlineWorkingCopy>((resolve, reject) => {
 					this._client.model().openWorkingCopy(wcId,
 						(model: IModel) => {
-							console.log(`Successfully opened new online working copy ${wcId} for project ${project.id() } : ${project.name() }`);
+							console.log(`Successfully opened new online working copy ${wcId} for project ${project.id()} : ${project.name()}`);
 							const rev: Revision = revision ? revision : new Revision(-1, new Branch(project, null));
 							const workingCopy: OnlineWorkingCopy = new OnlineWorkingCopy(this._client, wcId, rev, model);
 
@@ -277,15 +284,16 @@ export class PlatformSdkClient {
 	 * @returns a Promise of a Team Server Revision corresponding to the given workingCopy.
 	 */
 	commitToTeamServer(workingCopy: OnlineWorkingCopy, branchName: string = null, baseRevision: number = -1): When.Promise<Revision> {
-		if (workingCopy == null || workingCopy.project() == null) {
+		if (workingCopy === null || workingCopy.project() === null) {
 			return reject<Revision>(`Working copy is empty or does not contain referral to project`);
 		} else if (baseRevision < -1) {
 			return reject<Revision>(`Invalid base revision ${baseRevision}`);
 		}
 
-		console.log(`Committing changes in online working copy ${workingCopy.id() } to team server project ${workingCopy.project().id() } branch ${branchName} base revision ${baseRevision}`);
+		const teamServerInfo = "team server project ${workingCopy.project().id()} branch ${branchName} base revision ${baseRevision}";
+		console.log(`Committing changes in online working copy ${workingCopy.id()} to ${teamServerInfo}`);
 
-		const request = this._createRequestContent(PlatformSdkClient.CommitWorkingCopyChangesXml, {
+		const request = this._createRequestContent(PlatformSdkClient.commitWorkingCopyChangesXml, {
 			"Username": this._username,
 			"ApiKey": this._apikey,
 			"WorkingCopyId": workingCopy.id(),
@@ -307,9 +315,9 @@ export class PlatformSdkClient {
 			.then(jobResult => {
 				return promise<Revision>((resolve, reject) => {
 
-					const num: number = parseInt(jobResult.result);
+					const num: number = parseInt(jobResult.result, 10);
 
-					if (num == null) {
+					if (num === null) {
 						reject(`Failed to commit changes to team server: revision ${num} on branch ${branchName}. Reason: returned job id is not a number.`);
 					} else {
 						console.log(`Successfully committed changes to team server: revision ${num} on branch ${branchName}`);
@@ -326,11 +334,11 @@ export class PlatformSdkClient {
 	private _awaitJobResult(jobId: string): When.Promise<JobResult> {
 		return promise<JobResult>((resolve, reject) => {
 			setTimeout(() => {
-				const request = this._createRequestContent(PlatformSdkClient.RetrieveJobStatusXml, { "JobId": jobId });
+				const request = this._createRequestContent(PlatformSdkClient.retrieveJobStatusXml, { "JobId": jobId });
 
 				const client = wrap(this._createHttpErrorCodeInterceptor(`Error when retrieving job status`))
-                        .wrap(this._parseJobStatus())
-                        .wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
+					.wrap(this._parseJobStatus())
+					.wrap(pathPrefix, { prefix: this._projectsApiEndpoint });
 
 				client(request).then(response => {
 					let state: string = response.entity.state;
@@ -457,7 +465,8 @@ export class PlatformSdkClient {
 					this._parseAndQuery(response.entity, `$..faultstring[0]`)
 						.done((cause) => reject(`${errorMessage}: ${cause.replace(/\\[\r\n]+/g, os.EOL)}`), (error) => reject(error));
 				} else {
-					reject(`Unexpected HTTP response code: ${response.status.code} ${response.raw.response.statusMessage}. Please retry after a few minutes. If the problem persists, please consult https://mxforum.mendix.com`);
+					const retryMessage = "Please retry after a few minutes. If the problem persists, please consult https://mxforum.mendix.com";
+					reject(`Unexpected HTTP response code: ${response.status.code} ${response.raw.response.statusMessage}. ${retryMessage}`);
 				}
 			});
 		};
@@ -655,7 +664,7 @@ export class Branch {
   * @param optionalParams Zero or more parameters to be added to the log message.
   */
 export function myLog(message, ...optionalParams: any[]): void {
-	console.log(`${Date.now() }: ${message} ${optionalParams}`);
+	console.log(`${Date.now()}: ${message} ${optionalParams}`);
 }
 
 /**
