@@ -4,22 +4,29 @@ import sdk = require("../mendix-platform-sdk");
 import {expect} from "chai";
 import chaiAsPromised = require("chai-as-promised");
 
-import {back as nockBack} from "nock";
+import {back as nockBack, cleanAll, enableNetConnect} from "nock";
 nockBack.fixtures = "nockfixtures/";
 
 const integrationTest = process.env.INTEGRATION === "1";
+const recordFixtures = process.env.RECORD_FIXTURES === "1";
 
 // from https://github.com/pgte/nock
 // wild: all requests go out to the internet, don`t replay anything, doesn"t record anything (use this for integration test)
 // dryrun: The default, use recorded nocks, allow http calls, doesn"t record anything, useful for writing new tests
 // record: use recorded nocks, record new nocks (for development or unit test or CI)
 // lockdown: use recorded nocks, disables all http calls even when not nocked, doesn"t record  (for unit test and CI)
-if (integrationTest) {
-	nockBack.setMode(`wild`);
+if (true) {
+	//if (recordFixtures) {
+			cleanAll();
+			enableNetConnect();
+		nockBack.setMode("record");
+	// } else {
+	// 	nockBack.setMode(`wild`);
+	// }
 	console.log(`Running integration tests. Requests will target actual servers. Several tests involving Model SDK will also be executed.`);
 } else {
-	nockBack.setMode(`lockdown`);
-	console.log(`Running unit tests. Network requests are mocked (see nockfixtures/fixtures.json). Several tests involving Model SDK will not be executed.`);
+	// nockBack.setMode(`lockdown`);
+	// console.log(`Running unit tests. Network requests are mocked (see nockfixtures/fixtures.json). Several tests involving Model SDK will not be executed.`);
 }
 
 const chai = require("chai");
@@ -30,8 +37,8 @@ chai.use(chaiAsPromised);
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-const projectId = `ef03c9be-278c-486f-b36c-b1a7b0740ea8`;
-const unsupportedVersionProjectId = `d3bc06c2-a82d-4afb-8a64-998437c84656`;
+const projectId = `99aabaaa-ddc5-46fe-81fc-b9cd8d371544`;
+const unsupportedVersionProjectId = `d100ad23-c547-40d6-a5f4-1925a626f79c`;
 const projectName = `Roundtrip Integration`;
 
 describe(`MendixSdkClient credentials`, function() {
@@ -61,12 +68,12 @@ interface MendixSdkClientConfig {
 
 function createMendixSdkClient(config: MendixSdkClientConfig): sdk.MendixSdkClient {
 	const defaultConfig: MendixSdkClientConfig = {
-		username: "richard.ford51@example.com",
-		apiKey: "364fbe6d-c34d-4568-bb7c-1baa5ecdf9d1",
+		username: "jos.huiting@mendix.com",
+		apiKey: "cdf89bd1-4fcf-409a-b70e-ec5a26a19f7f",
 		password: null,
 		openId: null,
-		projectsApiEndpoint: "https://sprintr.home.mendix.dev",
-		modelApiEndpoint: "https://model-api.mendix.dev",
+		projectsApiEndpoint: "https://sprintr.home-accp.mendix.com",
+		modelApiEndpoint: "https://model-accp.api.mendix.com",
 		options: { pollDelay: 1 }
 	};
 	return new sdk.MendixSdkClient(
@@ -85,11 +92,8 @@ let client = createMendixSdkClient({});
 let clientWithInvalidApiKey = createMendixSdkClient({
 	apiKey: `Undoubtedly wrong API Key`
 });
-let clientWithInvalidHost = createMendixSdkClient({
-	projectsApiEndpoint: `https://sprintr.home.mendix.dev.invalid`
-});
 let clientWithInvalidEndPoint = createMendixSdkClient({
-	projectsApiEndpoint: `https://sprintr.home.mendix.dev/invalid`
+	projectsApiEndpoint: `https://sprintr.home-accp.mendix.com/invalid`
 });
 
 describe(`sdk`, () => {
@@ -98,11 +102,13 @@ describe(`sdk`, () => {
 		after(() => nockDone());
 
 		describe(`create new app`, function() { // function() instead of () => because in TS the `this` keyword has a different scope compared to what it is in JS
+			cleanAll();
+			enableNetConnect();
 
 			this.timeout(100000);
 
 			const projectName = `mySdkProject`;
-			const longProjectName = `This is a really long name that no one will actually do this at all 123456!!`;
+			const longProjectName = `This is a really long name that no one will actually do this at all 123456`;
 			const nonEmptyProjectSummary = `non-empty summary`;
 
 			it(`should just work`, () => {
@@ -119,20 +125,18 @@ describe(`sdk`, () => {
 			});
 			it(`should fail because project name is empty`, () => {
 				return client.platform().createNewApp(null)
-					.should.eventually.be.rejectedWith(`Project name cannot be empty`);
+					.should.eventually.be.rejectedWith("Failed to create new app: App name is required.");
 			});
 			it(`should fail because it contains invalid characters`, () => {
-				return client.platform().createNewApp(`/?mySdkProject`, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Project name cannot contain`);
+				return client.platform().createNewApp(`/?mySdkProject`, nonEmptyProjectSummary)
+					.should.eventually.be.rejectedWith("Failed to create new app: Only use letters, digits, dashes, underscores and spaces");
 			});
 			it(`should fail because of invalid API key`, () => {
 				const createNewApp = clientWithInvalidApiKey.platform().createNewApp(projectName, nonEmptyProjectSummary);
 				return createNewApp.should.eventually.be.rejectedWith(`Invalid username and/or API key`);
 			});
-			it(`should fail because of invalid hostname`, () => {
-				return clientWithInvalidHost.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`Connection error`);
-			});
 			it(`should fail because of invalid endpoint`, () => {
-				return clientWithInvalidEndPoint.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`404`);
+				return clientWithInvalidEndPoint.platform().createNewApp(projectName, nonEmptyProjectSummary).should.eventually.be.rejectedWith(`405`);
 			});
 		});
 
@@ -144,7 +148,7 @@ describe(`sdk`, () => {
 		// including a space in the branch name will cause issue in the assertion due to encoding
 		const nonExistentBranchOnRoundTrip = new sdk.Branch(roundTripProject, "Non-existentBranch");
 
-		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(12, mainLineOnRoundTrip);
+		const validRevisionOnMainLineOnRoundTrip = new sdk.Revision(2, mainLineOnRoundTrip);
 		const validRevisionOnMainLineOnUnsupportedProject = new sdk.Revision(-1, new sdk.Branch(unsupportedProject, null));
 
 		const invalidRevisionOnMainLineOnRoundTrip = new sdk.Revision(999, mainLineOnRoundTrip);
@@ -158,17 +162,17 @@ describe(`sdk`, () => {
 
 			this.timeout(50000);
 
-			it(`should succeed with an existing project`, () => {
+			it(`should succeed with an existing app`, () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
 					.should.eventually.be.fulfilled;
 			});
 			it(`should fail because of unsupported model version`, () => {
 				return client.platform().createOnlineWorkingCopy(unsupportedProject, validRevisionOnMainLineOnUnsupportedProject)
-					.should.eventually.be.rejectedWith(`The working copy was created with version 5.1.1 of the Business Modeler which is not supported by the Model API.`);
+					.should.eventually.be.rejectedWith(`The Model Server supports Mendix Modeler 6.0.0`);
 			});
-			it(`should fail because project does not exist`, () => {
+			it(`should fail because app does not exist`, () => {
 				return client.platform().createOnlineWorkingCopy(nonExistentProject, revisionOnNonExistentProject)
-					.should.eventually.be.rejectedWith("Project does not exist");
+					.should.eventually.be.rejectedWith("App does not exist");
 			});
 			it(`should fail because revision does not exist`, () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, invalidRevisionOnMainLineOnRoundTrip)
@@ -176,19 +180,15 @@ describe(`sdk`, () => {
 			});
 			it(`should fail because branch does not exist`, () => {
 				return client.platform().createOnlineWorkingCopy(roundTripProject, revisionOnNonExistentBranch)
-					.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' doesn't exist`); // yes, the quote is asymmetric, it's deliberate
+					.should.eventually.be.rejectedWith(`${nonExistentBranchOnRoundTrip.name() }' non-existent in revision 2`); // yes, the quote is asymmetric, it's deliberate
 			});
 			it(`should fail because API Keys is invalid`, () => {
 				return clientWithInvalidApiKey.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
 					.should.eventually.be.rejectedWith(`Invalid username and/or API key`);
 			});
-			it(`should fail because of invalid hostname`, () => {
-				return clientWithInvalidHost.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-					.should.eventually.be.rejectedWith(`Connection error`);
-			});
 			it(`should fail because of invalid endpoint`, () => {
 				return clientWithInvalidEndPoint.platform().createOnlineWorkingCopy(roundTripProject, validRevisionOnMainLineOnRoundTrip)
-					.should.eventually.be.rejectedWith(`404`);
+					.should.eventually.be.rejectedWith(`405`);
 			});
 		});
 
@@ -262,16 +262,13 @@ describe(`sdk`, () => {
 				it(`should fail because API Keys is invalid`, () => {
 					return clientWithInvalidApiKey.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Invalid username and/or API key`);
 				});
-				it(`should fail because of invalid hostname`, () => {
-					return clientWithInvalidHost.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`Connection error`);
-				});
 				it(`should fail because of invalid endpoint`, () => {
 					clientWithInvalidEndPoint.platform().commitToTeamServer(workingCopy).should.eventually.be.rejectedWith(`404 Not Found`);
 				});
 			});
 
 			it(`should fail because working copy does not exist`, () => {
-				return client.platform().commitToTeamServer(nonExistentWorkingCopy).should.eventually.be.rejectedWith(`Project does not exist`);
+				return client.platform().commitToTeamServer(nonExistentWorkingCopy).should.eventually.be.rejectedWith(`App does not exist`);
 			});
 
 			if (integrationTest) {

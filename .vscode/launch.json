@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  // List of configurations. Add new configurations or edit existing ones.
+  // ONLY "node" and "mono" are supported, change "type" to switch.
+  "configurations": [
+    {
+      "name": "Platform SDK tests",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "stopOnEntry": false,
+      "args": [
+        "--inspect"
+      ],
+      "cwd": "${workspaceRoot}",
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/**/*.js"
+      ]
+    }
+  ]
+}

@@ -171,10 +171,14 @@ export class PlatformSdkClient {
 	private _projectsApiEndpoint: string;
 	private _xmlParser: xml2js.Parser;
 
-	private static PROJECTS_API_PATH: string = `/ws/ProjectsAPI/9/soap1`;
+	private static PROJECTS_API_PATH: string = `/ws/ProjectsAPI/10/soap1`;
 
 	private static HTTP_STATUS_OK_RESPONSE_CODE: number = 200;
 	private static HTTP_STATUS_WS_ERROR_RESPONSE_CODE: number = 500;
+
+	private static _templatePath(filename: string): string {
+		return path.join(__dirname, `templates`, filename);
+	}
 
 	private static createNewAppXml: string = PlatformSdkClient._templatePath(`CreateNewApp.xml`);
 	private static createOnlineWorkingCopyXml: string = PlatformSdkClient._templatePath(`CreateOnlineWorkingCopy.xml`);
@@ -221,7 +225,7 @@ export class PlatformSdkClient {
 			.then(jobResult => {
 				console.log(`Project created successfully for user ${this._username} with id ${jobResult.result}`);
 				return new Project(this._client, jobResult.result, projectName);
-			});
+			})
 	}
 
 	/**
@@ -474,10 +478,6 @@ export class PlatformSdkClient {
 		return interceptor({
 			response: response
 		});
-	}
-
-	private static _templatePath(filename: string): string {
-		return path.join(__dirname, `templates`, filename);
 	}
 }
 
