@@ -1,27 +1,3 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2015 Mendix
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
-
 import { ModelSdkClient, IModel, Model, configuration } from "mendixmodelsdk";
 
 import fs = require("fs");
@@ -169,7 +145,7 @@ export class PlatformSdkClient {
 	private _username: string;
 	private _apikey: string;
 	private _projectsApiEndpoint: string;
-	private _xmlParser: xml2js.Parser;
+	private _xmlParser: xml2js.Parser;;
 
 	private static PROJECTS_API_PATH: string = `/ws/ProjectsAPI/10/soap1`;
 
@@ -177,7 +153,7 @@ export class PlatformSdkClient {
 	private static HTTP_STATUS_WS_ERROR_RESPONSE_CODE: number = 500;
 
 	private static _templatePath(filename: string): string {
-		return path.join(__dirname, `templates`, filename);
+		return path.join(__dirname, "../", `templates`, filename);
 	}
 
 	private static createNewAppXml: string = PlatformSdkClient._templatePath(`CreateNewApp.xml`);
@@ -200,14 +176,15 @@ export class PlatformSdkClient {
 	 * @param projectSummary (Optional) A short description of the new app
 	 * @returns a Promise of a Mendix App Project
 	 */
-	createNewApp(projectName: string, projectSummary?: string): When.Promise<Project> {
+	createNewApp(projectName: string, projectSummary?: string, templateUUID?: string): When.Promise<Project> {
 		console.log(`Creating new project with name ${projectName} for user ${this._username}...`);
 
 		const contents = this._createRequestContent(PlatformSdkClient.createNewAppXml, {
 			"ProjectName": projectName,
 			"ProjectSummary": projectSummary,
 			"User": this._username,
-			"ApiKey": this._apikey
+			"ApiKey": this._apikey,
+			"TemplateUUID": templateUUID
 		});
 
 		const apiClient = wrap(this._createHttpErrorCodeInterceptor(`Failed to create new app`))

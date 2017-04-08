@@ -4,3 +4,4 @@ typings
 CONTRIBUTING.md
 mendix-platform-sdk.d.ts.patch
 test
+dist/test

@@ -10,7 +10,9 @@
          <% } %>
          <User><%= User %></User>
          <ApiKey><%= ApiKey %></ApiKey>
-         <TemplateUUID>c00d0363-23d2-4ebe-ab63-76c9efe565c0</TemplateUUID>
+        <% if (TemplateUUID) { %>
+         <TemplateUUID><%= TemplateUUID %></TemplateUUID>
+        <% } %>
       </exam:CreateNewApp>
    </soapenv:Body>
 </soapenv:Envelope>

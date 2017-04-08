@@ -2,6 +2,7 @@
     "version": "2.1.4",
     "compilerOptions": {
         "target": "es5",
+        "outDir": "dist/",
         "module": "commonjs",
         "declaration": true,
         "removeComments": false,
@@ -9,7 +10,7 @@
         "newLine": "LF"
     },
     "include": [
-      "mendix-platform-sdk.ts.ts",
+      "mendix-platform-sdk.ts",
       "test/*.ts"
     ]
 }
